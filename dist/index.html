@@ -1106,36 +1106,32 @@ async function unlockAudio(){
 
 function playTone(
   startDelay = 0,
-  frequency = 880,
-  duration = 0.11
+  frequency = 1500,
+  duration = 0.09
 ){
 
   const ctx =
     getAudioContext();
 
-
   if (!ctx) {
     return;
   }
-
 
   const startTime =
     ctx.currentTime
     +
     startDelay;
 
-
   const oscillator =
     ctx.createOscillator();
-
 
   const gainNode =
     ctx.createGain();
 
-
+  // Square wave gives a sharper,
+  // louder scanner-like sound.
   oscillator.type =
-    'sine';
-
+    'square';
 
   oscillator.frequency
     .setValueAtTime(
@@ -1143,14 +1139,21 @@ function playTone(
       startTime
     );
 
-
+  // Louder than the previous 0.20.
   gainNode.gain
     .setValueAtTime(
-      0.20,
+      0.65,
       startTime
     );
 
+  // Very fast attack.
+  gainNode.gain
+    .setValueAtTime(
+      0.65,
+      startTime + 0.005
+    );
 
+  // Short decay.
   gainNode.gain
     .exponentialRampToValueAtTime(
       0.001,
@@ -1159,21 +1162,17 @@ function playTone(
       duration
     );
 
-
   oscillator.connect(
     gainNode
   );
-
 
   gainNode.connect(
     ctx.destination
   );
 
-
   oscillator.start(
     startTime
   );
-
 
   oscillator.stop(
     startTime
@@ -1184,34 +1183,42 @@ function playTone(
 }
 
 
-// New code:
-// one confirmation beep.
+// =====================================================
+// NEW BARCODE
+//
+// One strong supermarket-scanner style beep.
+// =====================================================
+
 function playNewCodeBeep(){
 
   playTone(
     0,
-    900,
-    0.12
+    1450,
+    0.095
   );
 
 }
 
 
-// Existing code:
-// two short beeps.
+// =====================================================
+// EXISTING BARCODE
+//
+// Two quick strong beeps.
+// =====================================================
+
 function playExistingCodeBeep(){
 
   playTone(
     0,
-    980,
-    0.09
+    1550,
+    0.075
   );
 
-
   playTone(
-    0.15,
-    980,
-    0.09
+    0.115,
+    1550,
+    0.075
+ 
   );
 
 }
