@@ -720,13 +720,15 @@ tbody tr:nth-child(even){
     <div class="manual">
 
       <input
-        id="manualCode"
-        type="text"
-        inputmode="numeric"
-        autocomplete="off"
-        autocapitalize="off"
-        spellcheck="false"
-        placeholder="Manual barcode entry"
+        <input
+  id="manualCode"
+  type="text"
+  inputmode="text"
+  autocomplete="off"
+  autocapitalize="characters"
+  spellcheck="false"
+  placeholder="Manual barcode entry"
+  style="text-transform:uppercase;"
       >
 
 
@@ -991,7 +993,9 @@ function normalizeCode(
 
   return String(
     value ?? ''
-  ).trim();
+  )
+    .trim()
+    .toUpperCase();
 
 }
 
@@ -2218,20 +2222,11 @@ addManualBtn.addEventListener(
 
 
 manualCode.addEventListener(
-  'keydown',
-  e => {
+  'input',
+  () => {
 
-    if (
-      e.key ===
-      'Enter'
-    ){
-
-      e.preventDefault();
-
-
-      addManualBtn.click();
-
-    }
+    manualCode.value =
+      manualCode.value.toUpperCase();
 
   }
 );
