@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#f6f1e4">
+<title>DUX Scan</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.7/html5-qrcode.min.js"></script>
+
+<style>
+:root{
+  --paper:#F6F1E4;
+  --paper-line:#E4DBC4;
+  --ink:#2E2A22;
+  --ink-soft:#6B6353;
+  --green:#2F6B4F;
+  --green-bg:#E3EEE6;
+  --red:#A94438;
+  --board:#C9BFA5;
+  --board-dark:#8B8168;
+  --card:#FFFEFA;
+  --blue:#365F8D;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh;
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  color:var(--ink); background:var(--paper);
+  padding:24px 12px 70px;
+}
+.wrap{width:min(100%,980px);margin:0 auto}
+.board{
+  background:var(--card); border:1px solid var(--board-dark);
+  border-radius:10px; box-shadow:0 2px 0 var(--board-dark),0 10px 24px rgba(60,50,30,.10);
+  padding:26px;
+}
+h1{
+  margin:0 0 4px; font-family:'Courier New',monospace;
+  font-size:28px; letter-spacing:.6px; text-transform:uppercase;
+}
+.subtitle{margin:0 0 20px;color:var(--ink-soft);font-size:14px}
+.toolbar{
+  display:grid; grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px; margin-bottom:16px;
+}
+.btn{
+  min-height:44px; border:1px solid var(--board-dark);
+  border-radius:7px; background:var(--card); color:var(--ink);
+  font:inherit; font-weight:600; cursor:pointer; padding:10px 12px;
+}
+.btn:hover{background:var(--paper-line)}
+.btn.primary{border-color:var(--green);color:var(--green)}
+.btn.primary:hover{background:var(--green-bg)}
+.btn.secondary{border-color:var(--blue);color:var(--blue)}
+.btn.danger{border-color:var(--red);color:var(--red)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.stats{
+  display:flex; flex-wrap:wrap; gap:12px; margin-bottom:16px;
+  font-family:'Courier New',monospace; font-size:13px; color:var(--ink-soft);
+}
+.stat{background:var(--paper);border:1px solid var(--paper-line);border-radius:6px;padding:8px 10px}
+.stat strong{color:var(--green)}
+.scanner-panel{
+  display:none; margin-bottom:18px; border:1px solid var(--board-dark);
+  border-radius:9px; padding:12px; background:#fff;
+}
+.scanner-panel.open{display:block}
+.scanner-head{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:10px; margin-bottom:10px;
+}
+.scanner-head strong{font-family:'Courier New',monospace;text-transform:uppercase}
+#reader{width:100%;overflow:hidden;border-radius:8px}
+.scan-status{min-height:22px;margin-top:10px;font-size:13px;color:var(--ink-soft)}
+.scan-status.ok{color:var(--green)}
+.scan-status.err{color:var(--red)}
+.manual{display:flex;gap:8px;margin-bottom:16px}
+.manual input{
+  flex:1; min-width:0; min-height:44px; border:1px solid var(--board-dark);
+  border-radius:7px; background:#fff; color:var(--ink);
+  padding:10px 12px; font:inherit; font-size:16px;
+}
+.table-scroll{overflow-x:auto;border:1px solid var(--paper-line);border-radius:8px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+thead th{
+  background:var(--board); padding:10px 12px; text-align:left;
+  font-family:'Courier New',monospace; font-size:12px;
+  text-transform:uppercase; white-space:nowrap;
+}
+tbody td{padding:10px 12px;border-top:1px solid var(--paper-line)}
+tbody tr:nth-child(even){background:#FBF8F0}
+.qty-wrap{display:flex;align-items:center;gap:8px}
+.qty-btn{
+  width:34px;height:34px;border:1px solid var(--board-dark);
+  border-radius:6px;background:#fff;font-size:18px;cursor:pointer;
+}
+.qty{min-width:34px;text-align:center;font-family:'Courier New',monospace;font-weight:700}
+.delete-btn{
+  border:1px solid var(--red);color:var(--red);background:#fff;
+  border-radius:6px;padding:7px 9px;cursor:pointer;
+}
+.empty{padding:38px 14px;text-align:center;color:var(--ink-soft)}
+.footer{margin-top:16px;text-align:center;color:var(--ink-soft);font-size:12px}
+.toast{
+  position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);
+  width:min(calc(100% - 24px),520px);background:#2E2A22;color:#fff;
+  border-radius:8px;padding:12px 14px;text-align:center;opacity:0;
+  pointer-events:none;transition:.18s ease;z-index:9999;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:720px){
+  body{padding:10px 8px 50px}
+  .board{padding:18px 12px}
+  h1{font-size:23px}
+  .toolbar{grid-template-columns:1fr 1fr}
+  .manual{flex-direction:column}
+  .manual .btn{width:100%}
+  .table-scroll{border:none;overflow:visible}
+  table,thead,tbody,tr,td{display:block;width:100%}
+  thead{
+    position:absolute;width:1px;height:1px;overflow:hidden;
+    clip:rect(0 0 0 0);
+  }
+  tbody tr{
+    background:var(--card);border:1px solid var(--paper-line);
+    border-radius:9px;margin-bottom:10px;padding:12px;
+  }
+  tbody tr:nth-child(even){background:var(--card)}
+  tbody td{
+    border:0;padding:6px 0;display:flex;align-items:center;
+    justify-content:space-between;gap:12px;word-break:break-word;
+  }
+  tbody td::before{
+    content:attr(data-label);flex:0 0 auto;color:var(--ink-soft);
+    font-size:11px;text-transform:uppercase;font-family:'Courier New',monospace;
+  }
+}
+@media(max-width:430px){.toolbar{grid-template-columns:1fr}}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+  <div class="board">
+    <h1>DUX Scan</h1>
+    <p class="subtitle">Scan barcodes, group repeated codes automatically, and export the result as an Excel file.</p>
+
+    <div class="toolbar">
+      <button class="btn primary" id="scanBtn">Scan barcode</button>
+      <button class="btn secondary" id="exportBtn">Export XLSX</button>
+      <button class="btn secondary" id="shareBtn">Send / Share XLSX</button>
+      <button class="btn danger" id="clearBtn">Clear list</button>
+    </div>
+
+    <div class="stats">
+      <div class="stat">Unique codes: <strong id="uniqueCount">0</strong></div>
+      <div class="stat">Total scanned: <strong id="totalCount">0</strong></div>
+    </div>
+
+    <div class="scanner-panel" id="scannerPanel">
+      <div class="scanner-head">
+        <strong>Barcode scanner</strong>
+        <button class="btn" id="closeScannerBtn">Close camera</button>
+      </div>
+      <div id="reader"></div>
+      <div class="scan-status" id="scanStatus">Point the camera at a barcode.</div>
+    </div>
+
+    <div class="manual">
+      <input id="manualCode" type="text" inputmode="numeric" autocomplete="off"
+             autocapitalize="off" spellcheck="false" placeholder="Manual barcode entry">
+      <button class="btn" id="addManualBtn">Add code</button>
+    </div>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Barcode</th>
+            <th>Quantity</th>
+            <th>Last scanned</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+      <div class="empty" id="emptyState">No barcodes scanned yet.</div>
+    </div>
+
+    <div class="footer">
+      The list is stored on this device. Refreshing the page will not erase it unless you clear the list.
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'dux_scan_items_v1';
+const DUPLICATE_COOLDOWN_MS = 1400;
+
+let items = loadItems();
+let scanner = null;
+let scannerRunning = false;
+let lastDecoded = '';
+let lastDecodedAt = 0;
+
+const scanBtn = document.getElementById('scanBtn');
+const exportBtn = document.getElementById('exportBtn');
+const shareBtn = document.getElementById('shareBtn');
+const clearBtn = document.getElementById('clearBtn');
+const scannerPanel = document.getElementById('scannerPanel');
+const closeScannerBtn = document.getElementById('closeScannerBtn');
+const scanStatus = document.getElementById('scanStatus');
+const manualCode = document.getElementById('manualCode');
+const addManualBtn = document.getElementById('addManualBtn');
+const tableBody = document.getElementById('tableBody');
+const emptyState = document.getElementById('emptyState');
+const uniqueCount = document.getElementById('uniqueCount');
+const totalCount = document.getElementById('totalCount');
+const toast = document.getElementById('toast');
+
+function loadItems(){
+  try{
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    return Array.isArray(saved) ? saved : [];
+  }catch(err){
+    return [];
+  }
+}
+
+function persist(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+}
+
+function nowText(){
+  return new Date().toLocaleString();
+}
+
+function normalizeCode(value){
+  return String(value ?? '').trim();
+}
+
+function showToast(message){
+  toast.textContent = message;
+  toast.classList.add('show');
+  clearTimeout(showToast.timer);
+  showToast.timer = setTimeout(() => toast.classList.remove('show'), 1700);
+}
+
+function addCode(rawCode){
+  const code = normalizeCode(rawCode);
+  if(!code) return;
+
+  const existing = items.find(item => item.barcode === code);
+
+  if(existing){
+    existing.quantity += 1;
+    existing.lastScanned = nowText();
+  }else{
+    items.push({
+      barcode: code,
+      quantity: 1,
+      firstSeen: Date.now(),
+      lastScanned: nowText()
+    });
+  }
+
+  persist();
+  render();
+  showToast(existing ? `${code} → quantity ${existing.quantity}` : `${code} added`);
+}
+
+function changeQty(index, delta){
+  const item = items[index];
+  if(!item) return;
+
+  item.quantity += delta;
+
+  if(item.quantity <= 0){
+    items.splice(index, 1);
+  }else{
+    item.lastScanned = nowText();
+  }
+
+  persist();
+  render();
+}
+
+function removeItem(index){
+  items.splice(index, 1);
+  persist();
+  render();
+}
+
+function render(){
+  tableBody.innerHTML = '';
+
+  items.forEach((item, index) => {
+    const tr = document.createElement('tr');
+
+    const tdNum = document.createElement('td');
+    tdNum.dataset.label = '#';
+    tdNum.textContent = index + 1;
+
+    const tdCode = document.createElement('td');
+    tdCode.dataset.label = 'Barcode';
+    tdCode.textContent = item.barcode;
+
+    const tdQty = document.createElement('td');
+    tdQty.dataset.label = 'Quantity';
+
+    const qtyWrap = document.createElement('div');
+    qtyWrap.className = 'qty-wrap';
+
+    const minus = document.createElement('button');
+    minus.className = 'qty-btn';
+    minus.type = 'button';
+    minus.textContent = '−';
+    minus.addEventListener('click', () => changeQty(index, -1));
+
+    const qty = document.createElement('span');
+    qty.className = 'qty';
+    qty.textContent = item.quantity;
+
+    const plus = document.createElement('button');
+    plus.className = 'qty-btn';
+    plus.type = 'button';
+    plus.textContent = '+';
+    plus.addEventListener('click', () => changeQty(index, 1));
+
+    qtyWrap.append(minus, qty, plus);
+    tdQty.appendChild(qtyWrap);
+
+    const tdLast = document.createElement('td');
+    tdLast.dataset.label = 'Last scanned';
+    tdLast.textContent = item.lastScanned || '';
+
+    const tdAction = document.createElement('td');
+    tdAction.dataset.label = 'Action';
+
+    const del = document.createElement('button');
+    del.className = 'delete-btn';
+    del.type = 'button';
+    del.textContent = 'Delete';
+    del.addEventListener('click', () => removeItem(index));
+
+    tdAction.appendChild(del);
+
+    tr.append(tdNum, tdCode, tdQty, tdLast, tdAction);
+    tableBody.appendChild(tr);
+  });
+
+  const total = items.reduce((sum, item) => sum + item.quantity, 0);
+  uniqueCount.textContent = items.length;
+  totalCount.textContent = total;
+  emptyState.style.display = items.length ? 'none' : 'block';
+  exportBtn.disabled = !items.length;
+  shareBtn.disabled = !items.length;
+  clearBtn.disabled = !items.length;
+}
+
+function makeWorkbook(){
+  const rows = items.map(item => ({
+    BARCODE: item.barcode,
+    QUANTITY: item.quantity
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(rows, {
+    header: ['BARCODE', 'QUANTITY']
+  });
+
+  worksheet['!cols'] = [
+    { wch: 24 },
+    { wch: 12 }
+  ];
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'DUX Scan');
+  return workbook;
+}
+
+function filename(){
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  return `DUX-Scan_${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}.xlsx`;
+}
+
+function exportXlsx(){
+  if(!items.length) return;
+  XLSX.writeFile(makeWorkbook(), filename());
+}
+
+async function shareXlsx(){
+  if(!items.length) return;
+
+  const workbook = makeWorkbook();
+  const arrayBuffer = XLSX.write(workbook, {
+    bookType: 'xlsx',
+    type: 'array'
+  });
+
+  const file = new File(
+    [arrayBuffer],
+    filename(),
+    { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
+  );
+
+  if(
+    navigator.share &&
+    (!navigator.canShare || navigator.canShare({ files: [file] }))
+  ){
+    try{
+      await navigator.share({
+        title: 'DUX Scan',
+        text: 'DUX Scan barcode list',
+        files: [file]
+      });
+      return;
+    }catch(err){
+      if(err && err.name === 'AbortError') return;
+      console.error(err);
+    }
+  }
+
+  XLSX.writeFile(workbook, filename());
+  showToast('Sharing is unavailable here. XLSX downloaded instead.');
+}
+
+async function startScanner(){
+  if(scannerRunning) return;
+
+  scannerPanel.classList.add('open');
+  scanStatus.className = 'scan-status';
+  scanStatus.textContent = 'Starting camera…';
+
+  try{
+    scanner = new Html5Qrcode('reader');
+
+    const config = {
+      fps: 12,
+      qrbox: (viewfinderWidth, viewfinderHeight) => {
+        const width = Math.floor(Math.min(viewfinderWidth * 0.92, 420));
+        const height = Math.floor(Math.min(viewfinderHeight * 0.38, 170));
+        return { width, height };
+      },
+      aspectRatio: 1.777778,
+      disableFlip: false
+    };
+
+    await scanner.start(
+      { facingMode: 'environment' },
+      config,
+      onScanSuccess,
+      () => {}
+    );
+
+    scannerRunning = true;
+    scanBtn.disabled = true;
+    scanStatus.className = 'scan-status ok';
+    scanStatus.textContent = 'Camera ready. Scan continuously.';
+  }catch(err){
+    console.error(err);
+    scannerRunning = false;
+    scanBtn.disabled = false;
+    scanStatus.className = 'scan-status err';
+    scanStatus.textContent = 'Camera could not start. Check browser camera permission.';
+  }
+}
+
+function onScanSuccess(decodedText){
+  const code = normalizeCode(decodedText);
+  if(!code) return;
+
+  const now = Date.now();
+
+  if(code === lastDecoded && (now - lastDecodedAt) < DUPLICATE_COOLDOWN_MS){
+    return;
+  }
+
+  lastDecoded = code;
+  lastDecodedAt = now;
+
+  addCode(code);
+
+  scanStatus.className = 'scan-status ok';
+  scanStatus.textContent = `Last scan: ${code}`;
+}
+
+async function stopScanner(){
+  if(scanner && scannerRunning){
+    try{
+      await scanner.stop();
+      scanner.clear();
+    }catch(err){
+      console.error(err);
+    }
+  }
+
+  scanner = null;
+  scannerRunning = false;
+  scanBtn.disabled = false;
+  scannerPanel.classList.remove('open');
+  document.getElementById('reader').innerHTML = '';
+}
+
+scanBtn.addEventListener('click', startScanner);
+closeScannerBtn.addEventListener('click', stopScanner);
+exportBtn.addEventListener('click', exportXlsx);
+shareBtn.addEventListener('click', shareXlsx);
+
+addManualBtn.addEventListener('click', () => {
+  addCode(manualCode.value);
+  manualCode.value = '';
+  manualCode.focus();
+});
+
+manualCode.addEventListener('keydown', e => {
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    addManualBtn.click();
+  }
+});
+
+clearBtn.addEventListener('click', () => {
+  if(!items.length) return;
+  if(!confirm('Clear the entire DUX Scan list?')) return;
+
+  items = [];
+  persist();
+  render();
+  showToast('List cleared');
+});
+
+window.addEventListener('pagehide', () => {
+  if(scannerRunning && scanner){
+    scanner.stop().catch(() => {});
+  }
+});
+
+render();
+</script>
+</body>
+</html>
