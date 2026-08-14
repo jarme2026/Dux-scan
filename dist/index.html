@@ -1073,7 +1073,24 @@ function getAudioContext(){
 
 }
 
+// =====================================================
+// VIBRATION
+// =====================================================
+  
+function vibrateScan(){
 
+  if (
+    'vibrate' in navigator
+  ){
+
+    navigator.vibrate(
+      70
+    );
+
+  }
+
+}
+  
 async function unlockAudio(){
 
   const ctx =
@@ -1106,7 +1123,6 @@ async function unlockAudio(){
   }
 
 }
-
 
 function playTone(
   startDelay = 0,
@@ -1186,7 +1202,6 @@ function playTone(
 
 }
 
-
 // =====================================================
 // NEW BARCODE
 //
@@ -1202,7 +1217,6 @@ function playNewCodeBeep(){
   );
 
 }
-
 
 // =====================================================
 // EXISTING BARCODE
@@ -1226,7 +1240,6 @@ function playExistingCodeBeep(){
   );
 
 }
-
 
 // =====================================================
 // ADD CODE
@@ -2093,11 +2106,24 @@ function onScanSuccess(
   // NEW barcode     = 1 beep
   // existing barcode = 2 beeps
   addCode(
-    code,
-    true
-  );
+  code,
+  true
+);
 
 
+// Short vibration confirming
+// a successful scan.
+vibrateScan();
+
+
+scanStatus.className =
+  'scan-status ok';
+
+
+scanStatus.textContent =
+  `Last scan: ${code}`;
+
+  
   scanStatus.className =
     'scan-status ok';
 
