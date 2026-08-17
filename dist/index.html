@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 
 <head>
@@ -18,9 +17,7 @@
 
 <title>DUX Scan</title>
 
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
 
 <script src="https://unpkg.com/html5-qrcode@2.3.7/html5-qrcode.min.js"></script>
 
@@ -28,49 +25,34 @@
 <style>
 
 :root{
-
   --paper:#F6F1E4;
-
   --paper-line:#E4DBC4;
-
   --ink:#2E2A22;
-
   --ink-soft:#6B6353;
 
   --green:#2F6B4F;
-
   --green-bg:#E3EEE6;
 
   --red:#A94438;
 
   --board:#C9BFA5;
-
   --board-dark:#8B8168;
 
   --card:#FFFEFA;
 
   --blue:#365F8D;
-
 }
 
 
 *{
-
-  box-sizing:
-    border-box;
-
+  box-sizing:border-box;
 }
 
 
 body{
+  margin:0;
 
-  margin:
-    0;
-
-
-  min-height:
-    100vh;
-
+  min-height:100vh;
 
   font-family:
     'Segoe UI',
@@ -78,870 +60,738 @@ body{
     -apple-system,
     sans-serif;
 
-
   color:
     var(--ink);
 
-
   background:
     var(--paper);
-
 
   padding:
     24px
     12px
     70px;
-
 }
 
 
 .wrap{
-
   width:
     min(
       100%,
       980px
     );
 
-
   margin:
     0 auto;
-
 }
 
 
 .board{
-
   background:
     var(--card);
-
 
   border:
     1px solid
     var(--board-dark);
 
-
   border-radius:
     10px;
 
-
   box-shadow:
-    0 2px 0
-      var(--board-dark),
-    0 10px 24px
-      rgba(
-        60,
-        50,
-        30,
-        .10
-      );
-
+    0 2px 0 var(--board-dark),
+    0 10px 24px rgba(60,50,30,.10);
 
   padding:
     26px;
-
 }
 
 
 h1{
-
   margin:
     0 0 4px;
-
 
   font-family:
     'Courier New',
     monospace;
-
 
   font-size:
     28px;
 
-
   letter-spacing:
     .6px;
 
-
   text-transform:
     uppercase;
-
 }
 
 
 .subtitle{
-
   margin:
     0 0 20px;
-
 
   color:
     var(--ink-soft);
 
-
   font-size:
     14px;
-
 }
 
 
 .toolbar{
-
-  display:
-    grid;
-
+  display:grid;
 
   grid-template-columns:
     repeat(
       3,
-      minmax(
-        0,
-        1fr
-      )
+      minmax(0,1fr)
     );
-
 
   gap:
     10px;
 
-
   margin-bottom:
     16px;
-
 }
 
 
 .btn{
-
   min-height:
     46px;
-
 
   border:
     1px solid
     var(--board-dark);
 
-
   border-radius:
     7px;
-
 
   background:
     var(--card);
 
-
   color:
     var(--ink);
 
-
   font:
     inherit;
-
 
   font-weight:
     600;
 
-
   cursor:
     pointer;
-
 
   padding:
     10px
     12px;
-
 }
 
 
 .btn:hover{
-
   background:
     var(--paper-line);
-
 }
 
 
 .btn.primary{
-
   border-color:
     var(--green);
 
-
   color:
     var(--green);
-
 }
 
 
 .btn.primary:hover{
-
   background:
     var(--green-bg);
-
 }
 
 
 .btn.secondary{
-
   border-color:
     var(--blue);
 
-
   color:
     var(--blue);
-
 }
 
 
 .btn.danger{
-
   border-color:
     var(--red);
 
-
   color:
     var(--red);
-
 }
 
 
 .btn:disabled{
-
-  opacity:
-    .5;
-
+  opacity:.5;
 
   cursor:
     not-allowed;
-
 }
 
 
 .stats{
-
-  display:
-    flex;
-
+  display:flex;
 
   flex-wrap:
     wrap;
 
-
   gap:
     12px;
 
-
   margin-bottom:
     16px;
-
 
   font-family:
     'Courier New',
     monospace;
 
-
   font-size:
     13px;
 
-
   color:
     var(--ink-soft);
-
 }
 
 
 .stat{
-
   background:
     var(--paper);
-
 
   border:
     1px solid
     var(--paper-line);
 
-
   border-radius:
     6px;
-
 
   padding:
     8px
     10px;
-
 }
 
 
 .stat strong{
-
   color:
     var(--green);
-
 }
 
 
+/* =====================================================
+   SCANNER
+
+   The camera becomes a horizontal bar fixed to the
+   top of the mobile screen.
+
+   One camera opening = one accepted barcode.
+   ===================================================== */
+
+
 .scanner-panel{
-
-  display:
-    none;
-
-
-  margin-bottom:
-    18px;
-
-
-  border:
-    1px solid
-    var(--board-dark);
-
-
-  border-radius:
-    9px;
-
-
-  padding:
-    12px;
-
-
-  background:
-    #fff;
-
+  display:none;
 }
 
 
 .scanner-panel.open{
+  display:block;
 
-  display:
-    block;
+  position:fixed;
 
-}
+  top:0;
+  left:0;
+  right:0;
 
+  width:100%;
 
-.scanner-head{
+  height:33vh;
 
-  display:
-    flex;
+  min-height:190px;
+  max-height:320px;
 
+  margin:0;
 
-  align-items:
-    center;
+  padding:0;
 
+  background:#000;
 
-  justify-content:
-    space-between;
+  border:0;
 
+  border-radius:0;
 
-  gap:
-    10px;
+  overflow:hidden;
 
+  z-index:9998;
 
-  margin-bottom:
-    10px;
-
-}
-
-
-.scanner-head strong{
-
-  font-family:
-    'Courier New',
-    monospace;
-
-
-  text-transform:
-    uppercase;
-
+  box-shadow:
+    0 6px 22px rgba(0,0,0,.35);
 }
 
 
 #reader{
+  position:absolute;
 
-  width:
-    100%;
+  top:0;
+  left:0;
+
+  width:100% !important;
+  height:100% !important;
+
+  overflow:hidden;
+
+  border:0 !important;
+
+  border-radius:0;
+}
 
 
-  overflow:
-    hidden;
+#reader video{
+  width:100% !important;
+  height:100% !important;
+
+  object-fit:cover !important;
+}
 
 
-  border-radius:
-    8px;
+#reader > div{
+  border:0 !important;
+}
 
+
+.scanner-head{
+  position:absolute;
+
+  top:8px;
+  left:10px;
+  right:10px;
+
+  display:flex;
+
+  align-items:center;
+
+  justify-content:
+    space-between;
+
+  gap:10px;
+
+  margin:0;
+
+  z-index:10000;
+
+  pointer-events:none;
+}
+
+
+.scanner-head strong{
+  display:none;
+}
+
+
+.scanner-head .btn{
+  margin-left:auto;
+
+  min-height:
+    36px;
+
+  padding:
+    7px 11px;
+
+  background:
+    rgba(0,0,0,.72);
+
+  border:
+    1px solid rgba(255,255,255,.7);
+
+  color:#fff;
+
+  backdrop-filter:
+    blur(4px);
+
+  pointer-events:auto;
 }
 
 
 .scan-status{
+  position:absolute;
 
-  min-height:
-    22px;
+  left:10px;
+  right:10px;
+  bottom:8px;
 
+  min-height:0;
 
-  margin-top:
-    10px;
+  margin:0;
 
+  padding:
+    7px 10px;
+
+  background:
+    rgba(0,0,0,.70);
+
+  color:#fff;
+
+  border-radius:
+    6px;
 
   font-size:
-    13px;
+    12px;
 
+  text-align:center;
 
-  color:
-    var(--ink-soft);
+  z-index:10000;
 
+  pointer-events:none;
 }
 
 
 .scan-status.ok{
-
-  color:
-    var(--green);
-
+  color:#fff;
 }
 
 
 .scan-status.err{
+  color:#fff;
 
-  color:
-    var(--red);
-
+  background:
+    rgba(169,68,56,.88);
 }
 
 
+/* =====================================================
+   MANUAL ENTRY
+   ===================================================== */
+
+
 .manual{
-
-  display:
-    flex;
-
+  display:flex;
 
   gap:
     8px;
 
-
   margin-bottom:
     16px;
-
 }
 
 
 .manual input{
+  flex:1;
 
-  flex:
-    1;
-
-
-  min-width:
-    0;
-
+  min-width:0;
 
   min-height:
     46px;
 
-
   border:
     1px solid
     var(--board-dark);
-
 
   border-radius:
     7px;
 
-
-  background:
-    #fff;
-
+  background:#fff;
 
   color:
     var(--ink);
-
 
   padding:
     10px
     12px;
 
-
   font:
     inherit;
-
 
   font-size:
     16px;
 
-
   text-transform:
     uppercase;
-
 }
 
 
+/* =====================================================
+   TABLE
+   ===================================================== */
+
+
 .table-scroll{
-
-  overflow-x:
-    auto;
-
+  overflow-x:auto;
 
   border:
     1px solid
     var(--paper-line);
 
-
   border-radius:
     8px;
-
 }
 
 
 table{
-
-  width:
-    100%;
-
+  width:100%;
 
   border-collapse:
     collapse;
 
-
   font-size:
     14px;
-
 }
 
 
 thead th{
-
   background:
     var(--board);
-
 
   padding:
     10px
     12px;
 
-
-  text-align:
-    left;
-
+  text-align:left;
 
   font-family:
     'Courier New',
     monospace;
 
-
   font-size:
     12px;
-
 
   text-transform:
     uppercase;
 
-
   white-space:
     nowrap;
-
 }
 
 
 tbody td{
-
   padding:
     10px
     12px;
 
-
   border-top:
     1px solid
     var(--paper-line);
-
 }
 
 
 tbody tr:nth-child(even){
-
   background:
     #FBF8F0;
-
 }
 
 
 .qty-wrap{
+  display:flex;
 
-  display:
-    flex;
-
-
-  align-items:
-    center;
-
+  align-items:center;
 
   gap:
     8px;
-
 }
 
 
 .qty-btn{
-
   width:
     34px;
 
-
   height:
     34px;
-
 
   border:
     1px solid
     var(--board-dark);
 
-
   border-radius:
     6px;
 
-
-  background:
-    #fff;
-
+  background:#fff;
 
   font-size:
     18px;
 
-
-  cursor:
-    pointer;
-
+  cursor:pointer;
 }
 
 
 .qty{
-
   min-width:
     34px;
 
-
-  text-align:
-    center;
-
+  text-align:center;
 
   font-family:
     'Courier New',
     monospace;
 
-
   font-weight:
     700;
-
 }
 
 
 .delete-btn{
-
   border:
     1px solid
     var(--red);
 
-
   color:
     var(--red);
 
-
-  background:
-    #fff;
-
+  background:#fff;
 
   border-radius:
     6px;
-
 
   padding:
     7px
     9px;
 
-
-  cursor:
-    pointer;
-
+  cursor:pointer;
 }
 
 
 .empty{
-
   padding:
     38px
     14px;
 
-
-  text-align:
-    center;
-
+  text-align:center;
 
   color:
     var(--ink-soft);
-
 }
 
 
 .footer{
-
   margin-top:
     16px;
 
-
-  text-align:
-    center;
-
+  text-align:center;
 
   color:
     var(--ink-soft);
 
-
   font-size:
     12px;
-
 }
 
 
 .toast{
+  position:fixed;
 
-  position:
-    fixed;
-
-
-  left:
-    50%;
-
+  left:50%;
 
   bottom:
     22px;
-
 
   transform:
     translateX(-50%)
     translateY(20px);
 
-
   width:
     min(
-      calc(
-        100% - 24px
-      ),
+      calc(100% - 24px),
       520px
     );
-
 
   background:
     #2E2A22;
 
-
-  color:
-    #fff;
-
+  color:#fff;
 
   border-radius:
     8px;
-
 
   padding:
     12px
     14px;
 
+  text-align:center;
 
-  text-align:
-    center;
+  opacity:0;
 
-
-  opacity:
-    0;
-
-
-  pointer-events:
-    none;
-
+  pointer-events:none;
 
   transition:
     .18s ease;
 
-
   z-index:
     9999;
-
 }
 
 
 .toast.show{
-
-  opacity:
-    1;
-
+  opacity:1;
 
   transform:
     translateX(-50%)
     translateY(0);
-
 }
 
 
+/* =====================================================
+   MOBILE
+   ===================================================== */
+
+
 @media(
-  max-width:
-    720px
+  max-width:720px
 ){
 
   body{
-
     padding:
       10px
       8px
       50px;
-
   }
 
 
   .board{
-
     padding:
       18px
       12px;
-
   }
 
 
   h1{
-
     font-size:
       23px;
-
   }
 
 
   .toolbar{
-
     grid-template-columns:
       1fr;
-
   }
 
 
   .manual{
-
     flex-direction:
       column;
-
   }
 
 
   .manual .btn{
-
     width:
       100%;
+  }
 
+
+  .scanner-panel.open{
+    height:
+      33vh;
+
+    min-height:
+      180px;
+
+    max-height:
+      none;
   }
 
 
   .table-scroll{
-
-    border:
-      none;
-
+    border:none;
 
     overflow:
       visible;
-
   }
 
 
@@ -950,136 +800,93 @@ tbody tr:nth-child(even){
   tbody,
   tr,
   td{
+    display:block;
 
-    display:
-      block;
-
-
-    width:
-      100%;
-
+    width:100%;
   }
 
 
   thead{
-
-    position:
-      absolute;
-
+    position:absolute;
 
     width:
       1px;
 
-
     height:
       1px;
 
-
-    overflow:
-      hidden;
-
+    overflow:hidden;
 
     clip:
-      rect(
-        0 0 0 0
-      );
-
+      rect(0 0 0 0);
   }
 
 
   tbody tr{
-
     background:
       var(--card);
-
 
     border:
       1px solid
       var(--paper-line);
 
-
     border-radius:
       9px;
-
 
     margin-bottom:
       10px;
 
-
     padding:
       12px;
-
   }
 
 
   tbody tr:nth-child(even){
-
     background:
       var(--card);
-
   }
 
 
   tbody td{
-
-    border:
-      0;
-
+    border:0;
 
     padding:
       6px 0;
 
+    display:flex;
 
-    display:
-      flex;
-
-
-    align-items:
-      center;
-
+    align-items:center;
 
     justify-content:
       space-between;
 
-
     gap:
       12px;
 
-
     word-break:
       break-word;
-
   }
 
 
   tbody td::before{
-
     content:
-      attr(
-        data-label
-      );
-
+      attr(data-label);
 
     flex:
       0 0 auto;
 
-
     color:
       var(--ink-soft);
-
 
     font-size:
       11px;
 
-
     text-transform:
       uppercase;
-
 
     font-family:
       'Courier New',
       monospace;
-
   }
 
 }
@@ -1215,21 +1022,13 @@ tbody tr:nth-child(even){
 
 
       <input
-
         id="manualCode"
-
         type="text"
-
         inputmode="text"
-
         autocomplete="off"
-
         autocapitalize="characters"
-
         spellcheck="false"
-
         placeholder="Manual barcode entry"
-
       >
 
 
@@ -1317,17 +1116,15 @@ tbody tr:nth-child(even){
 // CONFIGURATION
 // =====================================================
 
+
 const STORAGE_KEY =
   'dux_scan_items_v1';
-
-
-const DUPLICATE_COOLDOWN_MS =
-  1400;
 
 
 // =====================================================
 // STATE
 // =====================================================
+
 
 let items =
   loadItems();
@@ -1341,12 +1138,17 @@ let scannerRunning =
   false;
 
 
-let lastDecoded =
-  '';
+/*
+  Important:
 
+  Html5Qrcode can call onScanSuccess more than once
+  before scanner.stop() finishes.
 
-let lastDecodedAt =
-  0;
+  This lock guarantees that only the FIRST detection
+  is counted.
+*/
+let scanLocked =
+  false;
 
 
 let audioContext =
@@ -1356,6 +1158,7 @@ let audioContext =
 // =====================================================
 // ELEMENTS
 // =====================================================
+
 
 const scanBtn =
   document.getElementById(
@@ -1439,6 +1242,7 @@ const toast =
 // LOCAL STORAGE
 // =====================================================
 
+
 function loadItems(){
 
   try{
@@ -1453,7 +1257,9 @@ function loadItems(){
       );
 
 
-    return Array.isArray(saved)
+    return Array.isArray(
+      saved
+    )
       ?
       saved
       :
@@ -1488,6 +1294,7 @@ function persist(){
 // =====================================================
 // HELPERS
 // =====================================================
+
 
 function nowText(){
 
@@ -1551,6 +1358,7 @@ function showToast(
 // VIBRATION
 // =====================================================
 
+
 function vibrateScan(){
 
   if (
@@ -1571,6 +1379,7 @@ function vibrateScan(){
 // =====================================================
 // AUDIO
 // =====================================================
+
 
 function getAudioContext(){
 
@@ -1639,6 +1448,9 @@ async function unlockAudio(){
 }
 
 
+/*
+  Strong supermarket-style scanner beep.
+*/
 function playTone(
 
   startDelay = 0,
@@ -1723,6 +1535,10 @@ function playTone(
 }
 
 
+/*
+  New barcode:
+  one beep.
+*/
 function playNewCodeBeep(){
 
   playTone(
@@ -1734,6 +1550,10 @@ function playNewCodeBeep(){
 }
 
 
+/*
+  Existing barcode:
+  two beeps.
+*/
 function playExistingCodeBeep(){
 
   playTone(
@@ -1755,6 +1575,7 @@ function playExistingCodeBeep(){
 // =====================================================
 // ADD CODE
 // =====================================================
+
 
 function addCode(
 
@@ -1818,6 +1639,7 @@ function addCode(
 
   }
 
+
   else{
 
     items.push({
@@ -1879,6 +1701,7 @@ function addCode(
 // QUANTITY
 // =====================================================
 
+
 function changeQty(
 
   index,
@@ -1911,6 +1734,7 @@ function changeQty(
 
   }
 
+
   else{
 
     item.lastScanned =
@@ -1930,6 +1754,7 @@ function changeQty(
 // =====================================================
 // DELETE
 // =====================================================
+
 
 function removeItem(
   index
@@ -1952,6 +1777,7 @@ function removeItem(
 // =====================================================
 // TABLE
 // =====================================================
+
 
 function render(){
 
@@ -2241,6 +2067,7 @@ function render(){
 // XLSX
 // =====================================================
 
+
 function makeWorkbook(){
 
   const excelRows =
@@ -2394,6 +2221,7 @@ function reportFilename(){
 // SEND XLSX BY EMAIL
 // =====================================================
 
+
 async function sendByEmail(){
 
   if (
@@ -2542,6 +2370,7 @@ async function sendByEmail(){
 
     }
 
+
     else{
 
       alert(
@@ -2568,6 +2397,7 @@ async function sendByEmail(){
 
   }
 
+
   catch(err){
 
     console.error(
@@ -2580,6 +2410,7 @@ async function sendByEmail(){
     );
 
   }
+
 
   finally{
 
@@ -2596,8 +2427,11 @@ async function sendByEmail(){
 
 
 // =====================================================
-// SCANNER
+// START SCANNER
+//
+// ONE opening = ONE accepted barcode.
 // =====================================================
+
 
 async function startScanner(){
 
@@ -2608,6 +2442,15 @@ async function startScanner(){
     return;
 
   }
+
+
+  /*
+    New camera session.
+
+    Allow one barcode.
+  */
+  scanLocked =
+    false;
 
 
   await unlockAudio();
@@ -2639,10 +2482,19 @@ async function startScanner(){
 
     const config = {
 
+      /*
+        Fast detection for a short camera session.
+      */
       fps:
-        12,
+        15,
 
 
+      /*
+        Horizontal barcode reading area.
+
+        The camera itself is already only
+        about one third of the screen.
+      */
       qrbox:
 
         (
@@ -2654,15 +2506,9 @@ async function startScanner(){
           const width =
             Math.floor(
 
-              Math.min(
-
-                viewfinderWidth
-                *
-                0.92,
-
-                420
-
-              )
+              viewfinderWidth
+              *
+              0.92
 
             );
 
@@ -2674,9 +2520,9 @@ async function startScanner(){
 
                 viewfinderHeight
                 *
-                0.38,
+                0.60,
 
-                170
+                130
 
               )
 
@@ -2695,7 +2541,7 @@ async function startScanner(){
 
 
       aspectRatio:
-        1.777778,
+        2.4,
 
 
       disableFlip:
@@ -2733,9 +2579,10 @@ async function startScanner(){
 
 
     scanStatus.textContent =
-      'Camera ready. Scan continuously.';
+      'Point the camera at one barcode.';
 
   }
+
 
   catch(err){
 
@@ -2745,6 +2592,10 @@ async function startScanner(){
 
 
     scannerRunning =
+      false;
+
+
+    scanLocked =
       false;
 
 
@@ -2766,11 +2617,36 @@ async function startScanner(){
 
 // =====================================================
 // SCAN SUCCESS
+//
+// FIRST valid scan:
+//
+// 1. Locks scanner callback.
+// 2. Adds code.
+// 3. Plays beep.
+// 4. Vibrates.
+// 5. Closes camera.
 // =====================================================
 
-function onScanSuccess(
+
+async function onScanSuccess(
   decodedText
 ){
+
+  /*
+    Html5Qrcode may detect the same barcode
+    in several consecutive frames before
+    scanner.stop() completes.
+
+    Only the first callback is accepted.
+  */
+  if (
+    scanLocked
+  ){
+
+    return;
+
+  }
+
 
   const code =
     normalizeCode(
@@ -2783,53 +2659,27 @@ function onScanSuccess(
   }
 
 
-  const now =
-    Date.now();
+  /*
+    Lock immediately.
+
+    This is what prevents repeated counts.
+  */
+  scanLocked =
+    true;
 
 
-  // Prevent a stationary barcode
-  // from being counted repeatedly
-  // in a fraction of a second.
+  /*
+    Existing behaviour is preserved:
 
-  if (
+    New code:
+      one beep
 
-    code ===
-      lastDecoded
+    Existing code:
+      two beeps
 
-    &&
-
-    (
-      now
-      -
-      lastDecodedAt
-    )
-    <
-    DUPLICATE_COOLDOWN_MS
-
-  ){
-
-    return;
-
-  }
-
-
-  lastDecoded =
-    code;
-
-
-  lastDecodedAt =
-    now;
-
-
-  // New code:
-  // 1 beep
-  //
-  // Existing code:
-  // 2 beeps
-  //
-  // Both:
-  // short vibration
-
+    Both:
+      short vibration
+  */
   addCode(
     code,
     true,
@@ -2842,9 +2692,31 @@ function onScanSuccess(
 
 
   scanStatus.textContent =
-    'Last scan: '
+    'Scanned: '
     +
     code;
+
+
+  /*
+    Very short delay so the beep/vibration
+    confirmation is clearly perceived before
+    the camera disappears.
+  */
+  await new Promise(
+
+    resolve =>
+      setTimeout(
+        resolve,
+        120
+      )
+
+  );
+
+
+  /*
+    Close automatically after ONE barcode.
+  */
+  await stopScanner();
 
 }
 
@@ -2853,40 +2725,57 @@ function onScanSuccess(
 // STOP CAMERA
 // =====================================================
 
+
 async function stopScanner(){
 
-  if (
-    scanner
-    &&
-    scannerRunning
-  ){
-
-    try{
-
-      await scanner.stop();
+  const currentScanner =
+    scanner;
 
 
-      scanner.clear();
+  /*
+    Change state immediately.
 
-    }
-
-    catch(err){
-
-      console.error(
-        err
-      );
-
-    }
-
-  }
+    This prevents the button from becoming
+    stuck if stopping the camera takes time.
+  */
+  scannerRunning =
+    false;
 
 
   scanner =
     null;
 
 
-  scannerRunning =
-    false;
+  try{
+
+    if (
+      currentScanner
+    ){
+
+      await currentScanner.stop();
+
+
+      currentScanner.clear();
+
+    }
+
+  }
+
+
+  catch(err){
+
+    /*
+      This can happen if the camera is already
+      shutting down.
+
+      It should not interrupt the app.
+    */
+    console.log(
+      'Scanner already stopping/stopped.',
+      err
+    );
+
+  }
 
 
   scanBtn.disabled =
@@ -2900,12 +2789,20 @@ async function stopScanner(){
     );
 
 
-  document
-    .getElementById(
+  const reader =
+    document.getElementById(
       'reader'
-    )
-    .innerHTML =
+    );
+
+
+  if (
+    reader
+  ){
+
+    reader.innerHTML =
       '';
+
+  }
 
 }
 
@@ -2913,6 +2810,7 @@ async function stopScanner(){
 // =====================================================
 // EVENTS
 // =====================================================
+
 
 scanBtn.addEventListener(
 
@@ -2946,9 +2844,12 @@ sendBtn.addEventListener(
 // MANUAL ENTRY
 // =====================================================
 
-// Force uppercase visually AND
-// in the actual stored value.
 
+/*
+  Allow letters and numbers.
+
+  Store manual codes in uppercase.
+*/
 manualCode.addEventListener(
 
   'input',
@@ -3021,6 +2922,7 @@ manualCode.addEventListener(
 // CLEAR LIST
 // =====================================================
 
+
 clearBtn.addEventListener(
 
   'click',
@@ -3071,6 +2973,7 @@ clearBtn.addEventListener(
 // PAGE CLOSE
 // =====================================================
 
+
 window.addEventListener(
 
   'pagehide',
@@ -3100,6 +3003,7 @@ window.addEventListener(
 // =====================================================
 // INITIAL RENDER
 // =====================================================
+
 
 render();
 
