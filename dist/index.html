@@ -242,7 +242,55 @@ function removeItem(i){items.splice(i,1);persist();render()}
 function render(){tableBody.innerHTML='';items.forEach((x,i)=>{const tr=document.createElement('tr');tr.innerHTML=`<td data-label="#">${i+1}</td><td data-label="Barcode">${x.barcode}</td><td data-label="Quantity"><div class="qty-wrap"><button class="qty-btn minus">−</button><span class="qty">${x.quantity}</span><button class="qty-btn plus">+</button></div></td><td data-label="Last scanned">${x.lastScanned||''}</td><td data-label="Action"><button class="delete-btn">Delete</button></td>`;tr.querySelector('.minus').onclick=()=>changeQty(i,-1);tr.querySelector('.plus').onclick=()=>changeQty(i,1);tr.querySelector('.delete-btn').onclick=()=>removeItem(i);tableBody.appendChild(tr)});const total=items.reduce((s,x)=>s+x.quantity,0);uniqueCount.textContent=items.length;totalCount.textContent=total;emptyState.style.display=items.length?'none':'block';sendBtn.disabled=!items.length;clearBtn.disabled=!items.length}
 function makeWorkbook(checkedBy){const rows=items.map(x=>({BARCODE:x.barcode,QUANTITY:x.quantity,'CHECKED BY':checkedBy}));const ws=XLSX.utils.json_to_sheet(rows,{header:['BARCODE','QUANTITY','CHECKED BY']});ws['!cols']=[{wch:26},{wch:12},{wch:16}];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'DUX Scan');return wb}
 function reportFilename(){const d=new Date(),p=n=>String(n).padStart(2,'0');return`DUX-Scan_${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}_${p(d.getHours())}-${p(d.getMinutes())}.xlsx`}
-async function sendByEmail(){if(!items.length)return;const checkedBy=await chooseChecker();sendBtn.disabled=true;sendBtn.textContent='Sending…';try{const wb=makeWorkbook(checkedBy),ab=XLSX.write(wb,{bookType:'xlsx',type:'array'}),bytes=new Uint8Array(ab);let binary='';for(let i=0;i<bytes.length;i++)binary+=String.fromCharCode(bytes[i]);const res=await fetch('/api/send-report',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({filename:reportFilename(),content:btoa(binary),checkedBy})});let data=null;try{data=await res.json()}catch{}if(res.ok&&data&&data.sent){showToast('Report sent successfully!');alert('DUX Scan report sent successfully. Checked by: '+checkedBy)}else alert('Could not send report: '+(data&&data.error?data.error:'HTTP '+res.status))}catch(e){console.error(e);alert('Could not reach the server.')}finally{sendBtn.disabled=false;sendBtn.textContent='Send by email'}}
+async function sendByEmail(){
+  if (!items.length) return;
+
+  const checkedBy = currentCheckerName() || await requestCheckerName();
+  if (!checkedBy){
+    alert('Please enter the checker name before sending the report.');
+    return;
+  }
+
+  sendBtn.disabled = true;
+  sendBtn.textContent = 'Sending…';
+
+  try{
+    const wb = makeWorkbook(checkedBy);
+    const ab = XLSX.write(wb, { bookType:'xlsx', type:'array' });
+    const bytes = new Uint8Array(ab);
+
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++){
+      binary += String.fromCharCode(bytes[i]);
+    }
+
+    const res = await fetch('/api/send-report', {
+      method:'POST',
+      headers:{ 'content-type':'application/json' },
+      body:JSON.stringify({
+        filename: reportFilename(),
+        content: btoa(binary),
+        checkedBy
+      })
+    });
+
+    let data = null;
+    try{ data = await res.json(); }catch(e){}
+
+    if (res.ok && data && data.sent){
+      showToast('Report sent successfully!');
+      alert('DUX Scan report sent successfully. Checked by: ' + checkedBy);
+    } else {
+      alert('Could not send report: ' + (data && data.error ? data.error : 'HTTP ' + res.status));
+    }
+  }catch(e){
+    console.error(e);
+    alert('Could not reach the server.');
+  }finally{
+    sendBtn.disabled = false;
+    sendBtn.textContent = 'Send by email';
+  }
+}
 async function startScanner(){if(scannerRunning)return;scanLocked=false;await unlockAudio();scannerPanel.classList.add('open');scanStatus.textContent='Starting camera…';try{scanner=new Html5Qrcode('reader');await scanner.start({facingMode:'environment'},{fps:15,qrbox:(w,h)=>({width:Math.floor(w*.92),height:Math.floor(Math.min(h*.60,130))}),aspectRatio:2.4,disableFlip:false},onScanSuccess,()=>{});scannerRunning=true;scanBtn.disabled=true;scanStatus.textContent='Point the camera at one barcode.'}catch(e){console.error(e);scannerRunning=false;scanLocked=false;scanBtn.disabled=false;scanStatus.textContent='Camera could not start. Check browser camera permission.'}}
 async function onScanSuccess(decoded){if(scanLocked)return;const code=normalizeCode(decoded);if(!code)return;scanLocked=true;addCode(code,true,true);scanStatus.textContent='Scanned: '+code;await new Promise(r=>setTimeout(r,120));await stopScanner()}
 async function stopScanner(){const cur=scanner;scannerRunning=false;scanner=null;try{if(cur){await cur.stop();cur.clear()}}catch{}scanBtn.disabled=false;scannerPanel.classList.remove('open');$('reader').innerHTML=''}
