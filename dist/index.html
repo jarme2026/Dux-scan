@@ -21,13 +21,102 @@ h1{margin:0 0 4px;font-family:'Courier New',monospace;font-size:28px;text-transf
 .manual{display:flex;gap:8px;margin-bottom:16px}.manual input{flex:1;min-width:0;min-height:46px;border:1px solid var(--dark);border-radius:7px;background:#fff;color:var(--ink);padding:10px 12px;font:inherit;font-size:16px;text-transform:uppercase}
 .table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px}table{width:100%;border-collapse:collapse;font-size:14px}thead th{background:var(--board);padding:10px 12px;text-align:left;font-family:'Courier New',monospace;font-size:12px;text-transform:uppercase}tbody td{padding:10px 12px;border-top:1px solid var(--line)}tbody tr:nth-child(even){background:#FBF8F0}.qty-wrap{display:flex;align-items:center;gap:8px}.qty-btn{width:34px;height:34px;border:1px solid var(--dark);border-radius:6px;background:#fff;font-size:18px}.qty{min-width:34px;text-align:center;font-weight:700}.delete-btn{border:1px solid var(--red);color:var(--red);background:#fff;border-radius:6px;padding:7px 9px}.empty{padding:38px 14px;text-align:center;color:var(--soft)}.footer{margin-top:16px;text-align:center;color:var(--soft);font-size:12px}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);width:min(calc(100% - 24px),520px);background:#2E2A22;color:#fff;border-radius:8px;padding:12px 14px;text-align:center;opacity:0;pointer-events:none;transition:.18s;z-index:9999}.toast.show{opacity:1;transform:translateX(-50%)}
-#checkerOverlay{position:fixed;inset:0;z-index:10001;background:rgba(30,25,15,.62);display:none;align-items:center;justify-content:center;padding:18px}#checkerOverlay.open{display:flex}.checker-card{width:min(100%,390px);background:#FFFEFA;border:1px solid var(--dark);border-radius:12px;padding:22px;box-shadow:0 18px 50px rgba(0,0,0,.28)}.checker-card h2{margin:0 0 8px;font:700 20px 'Courier New',monospace}.checker-card p{margin:0 0 16px;color:var(--soft);font-size:14px}.checker-card select{width:100%;padding:12px;margin-bottom:14px;font-size:16px;border:1px solid var(--dark);border-radius:7px;background:#fff}.checker-card button{width:100%}
 @media(max-width:720px){body{padding:10px 8px 50px}.board{padding:18px 12px}.toolbar{grid-template-columns:1fr}.manual{flex-direction:column}.manual .btn{width:100%}.table-scroll{border:none;overflow:visible}table,thead,tbody,tr,td{display:block;width:100%}thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}tbody tr{background:var(--card);border:1px solid var(--line);border-radius:9px;margin-bottom:10px;padding:12px}tbody td{border:0;padding:6px 0;display:flex;align-items:center;justify-content:space-between;gap:12px}tbody td::before{content:attr(data-label);color:var(--soft);font-size:11px;text-transform:uppercase;font-family:'Courier New',monospace}}
+
+.checker-userbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin:0 0 16px;
+  padding:10px 12px;
+  border:1px solid var(--paper-line, #ddd2b8);
+  border-radius:8px;
+  background:var(--card, #fffefa);
+  color:var(--ink-soft, #6b6353);
+  font-size:13px;
+}
+.checker-userbar strong{color:var(--ink, #2e2a22);}
+.checker-userbar button{
+  border:1px solid var(--clip-dark, #8b8168);
+  border-radius:6px;
+  background:transparent;
+  color:inherit;
+  padding:7px 10px;
+  cursor:pointer;
+  font:inherit;
+}
+#checkerLoginOverlay{
+  position:fixed;
+  inset:0;
+  z-index:100000;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  background:rgba(30,25,15,.66);
+  backdrop-filter:blur(3px);
+}
+#checkerLoginOverlay.open{display:flex;}
+.checker-login-card{
+  width:min(100%,400px);
+  background:#FFFEFA;
+  color:#2E2A22;
+  border:1px solid #8B8168;
+  border-radius:12px;
+  padding:22px;
+  box-shadow:0 18px 50px rgba(0,0,0,.28);
+}
+.checker-login-card h2{
+  margin:0 0 8px;
+  font:700 20px 'Courier New',monospace;
+}
+.checker-login-card p{
+  margin:0 0 16px;
+  color:#6B6353;
+  font-size:14px;
+  line-height:1.4;
+}
+.checker-login-card input{
+  width:100%;
+  padding:12px;
+  margin-bottom:12px;
+  border:1px solid #8B8168;
+  border-radius:7px;
+  background:#fff;
+  color:#2E2A22;
+  font:inherit;
+  font-size:16px;
+}
+.checker-login-card .checker-login-error{
+  min-height:18px;
+  margin:-4px 0 8px;
+  color:#A94438;
+  font-size:12px;
+}
+.checker-login-card button{
+  width:100%;
+  min-height:44px;
+  border:1px solid #2F6B4F;
+  border-radius:7px;
+  background:#2F6B4F;
+  color:#fff;
+  font:inherit;
+  font-weight:700;
+  cursor:pointer;
+}
+
 </style>
 </head>
 <body>
 <div class="wrap"><div class="board">
 <h1>DUX Scan</h1>
+
+<div class="checker-userbar" id="checkerUserBar" style="display:none;">
+  <div>Checking by: <strong id="checkerUserName"></strong></div>
+  <button type="button" id="changeCheckerBtn">Change name</button>
+</div>
+
 <p class="subtitle">Scan barcodes, automatically group repeated codes and send the final Excel report by email.</p>
 <div class="toolbar">
 <button class="btn primary" id="scanBtn">Scan barcode</button>
@@ -41,8 +130,98 @@ h1{margin:0 0 4px;font-family:'Courier New',monospace;font-size:28px;text-transf
 <div class="footer">The list is stored on this device. Refreshing the page will not erase it unless you clear the list.</div>
 </div></div>
 <div class="toast" id="toast"></div>
-<div id="checkerOverlay"><div class="checker-card"><h2>WHO CHECKED THIS?</h2><p>Select who completed this verification before sending the report.</p><select id="checkerSelect"><option value="">Select a name...</option><option value="Adrian">Adrian</option><option value="Leo">Leo</option><option value="Liviu">Liviu</option></select><button class="btn primary" id="checkerConfirm">Send email</button></div></div>
+
 <script>
+
+const CHECKER_SESSION_KEY = 'checker_name_session';
+
+function cleanCheckerName(value){
+  return String(value || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .slice(0, 50);
+}
+
+function currentCheckerName(){
+  return cleanCheckerName(sessionStorage.getItem(CHECKER_SESSION_KEY) || '');
+}
+
+function updateCheckerUserBar(){
+  const name = currentCheckerName();
+  const bar = document.getElementById('checkerUserBar');
+  const label = document.getElementById('checkerUserName');
+  if (!bar || !label) return;
+  label.textContent = name;
+  bar.style.display = name ? 'flex' : 'none';
+}
+
+function requestCheckerName(forceChange = false){
+  return new Promise(resolve => {
+    const existing = currentCheckerName();
+    if (existing && !forceChange){
+      updateCheckerUserBar();
+      resolve(existing);
+      return;
+    }
+
+    const overlay = document.getElementById('checkerLoginOverlay');
+    const input = document.getElementById('checkerLoginInput');
+    const error = document.getElementById('checkerLoginError');
+    const save = document.getElementById('checkerLoginSave');
+
+    if (!overlay || !input || !save){
+      resolve(existing);
+      return;
+    }
+
+    input.value = forceChange ? existing : '';
+    error.textContent = '';
+    overlay.classList.add('open');
+    setTimeout(() => input.focus(), 50);
+
+    const submit = () => {
+      const name = cleanCheckerName(input.value);
+      if (name.length < 2){
+        error.textContent = 'Please enter your name.';
+        input.focus();
+        return;
+      }
+
+      sessionStorage.setItem(CHECKER_SESSION_KEY, name);
+      overlay.classList.remove('open');
+      updateCheckerUserBar();
+      cleanup();
+      resolve(name);
+    };
+
+    const keyHandler = event => {
+      if (event.key === 'Enter'){
+        event.preventDefault();
+        submit();
+      }
+    };
+
+    const cleanup = () => {
+      save.removeEventListener('click', submit);
+      input.removeEventListener('keydown', keyHandler);
+    };
+
+    save.addEventListener('click', submit);
+    input.addEventListener('keydown', keyHandler);
+  });
+}
+
+function bindCheckerChangeButton(){
+  const btn = document.getElementById('changeCheckerBtn');
+  if (btn){
+    btn.addEventListener('click', () => {
+      requestCheckerName(true);
+    });
+  }
+  updateCheckerUserBar();
+}
+
+
 const STORAGE_KEY='dux_scan_items_v1';
 let items=loadItems(),scanner=null,scannerRunning=false,scanLocked=false,audioContext=null;
 const $=id=>document.getElementById(id);
@@ -61,7 +240,6 @@ function addCode(raw,sound=true,vibrate=true){const code=normalizeCode(raw);if(!
 function changeQty(i,d){const x=items[i];if(!x)return;x.quantity+=d;if(x.quantity<=0)items.splice(i,1);else x.lastScanned=nowText();persist();render()}
 function removeItem(i){items.splice(i,1);persist();render()}
 function render(){tableBody.innerHTML='';items.forEach((x,i)=>{const tr=document.createElement('tr');tr.innerHTML=`<td data-label="#">${i+1}</td><td data-label="Barcode">${x.barcode}</td><td data-label="Quantity"><div class="qty-wrap"><button class="qty-btn minus">−</button><span class="qty">${x.quantity}</span><button class="qty-btn plus">+</button></div></td><td data-label="Last scanned">${x.lastScanned||''}</td><td data-label="Action"><button class="delete-btn">Delete</button></td>`;tr.querySelector('.minus').onclick=()=>changeQty(i,-1);tr.querySelector('.plus').onclick=()=>changeQty(i,1);tr.querySelector('.delete-btn').onclick=()=>removeItem(i);tableBody.appendChild(tr)});const total=items.reduce((s,x)=>s+x.quantity,0);uniqueCount.textContent=items.length;totalCount.textContent=total;emptyState.style.display=items.length?'none':'block';sendBtn.disabled=!items.length;clearBtn.disabled=!items.length}
-function chooseChecker(){return new Promise(resolve=>{const overlay=$('checkerOverlay'),sel=$('checkerSelect');sel.value='';overlay.classList.add('open');$('checkerConfirm').onclick=()=>{if(!sel.value){alert('Please select Adrian, Leo or Liviu.');return}const name=sel.value;overlay.classList.remove('open');resolve(name)}})}
 function makeWorkbook(checkedBy){const rows=items.map(x=>({BARCODE:x.barcode,QUANTITY:x.quantity,'CHECKED BY':checkedBy}));const ws=XLSX.utils.json_to_sheet(rows,{header:['BARCODE','QUANTITY','CHECKED BY']});ws['!cols']=[{wch:26},{wch:12},{wch:16}];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'DUX Scan');return wb}
 function reportFilename(){const d=new Date(),p=n=>String(n).padStart(2,'0');return`DUX-Scan_${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}_${p(d.getHours())}-${p(d.getMinutes())}.xlsx`}
 async function sendByEmail(){if(!items.length)return;const checkedBy=await chooseChecker();sendBtn.disabled=true;sendBtn.textContent='Sending…';try{const wb=makeWorkbook(checkedBy),ab=XLSX.write(wb,{bookType:'xlsx',type:'array'}),bytes=new Uint8Array(ab);let binary='';for(let i=0;i<bytes.length;i++)binary+=String.fromCharCode(bytes[i]);const res=await fetch('/api/send-report',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({filename:reportFilename(),content:btoa(binary),checkedBy})});let data=null;try{data=await res.json()}catch{}if(res.ok&&data&&data.sent){showToast('Report sent successfully!');alert('DUX Scan report sent successfully. Checked by: '+checkedBy)}else alert('Could not send report: '+(data&&data.error?data.error:'HTTP '+res.status))}catch(e){console.error(e);alert('Could not reach the server.')}finally{sendBtn.disabled=false;sendBtn.textContent='Send by email'}}
@@ -70,7 +248,19 @@ async function onScanSuccess(decoded){if(scanLocked)return;const code=normalizeC
 async function stopScanner(){const cur=scanner;scannerRunning=false;scanner=null;try{if(cur){await cur.stop();cur.clear()}}catch{}scanBtn.disabled=false;scannerPanel.classList.remove('open');$('reader').innerHTML=''}
 scanBtn.onclick=startScanner;closeScannerBtn.onclick=stopScanner;sendBtn.onclick=sendByEmail;
 manualCode.oninput=()=>manualCode.value=manualCode.value.toUpperCase();addManualBtn.onclick=()=>{addCode(manualCode.value,false,false);manualCode.value='';manualCode.focus()};manualCode.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();addManualBtn.click()}}
-clearBtn.onclick=()=>{if(items.length&&confirm('Clear the entire DUX Scan list?')){items=[];persist();render();showToast('List cleared')}};window.addEventListener('pagehide',()=>{if(scannerRunning&&scanner)scanner.stop().catch(()=>{})});render();
+clearBtn.onclick=()=>{if(items.length&&confirm('Clear the entire DUX Scan list?')){items=[];persist();render();showToast('List cleared')}};window.addEventListener('pagehide',()=>{if(scannerRunning&&scanner)scanner.stop().catch(()=>{})});bindCheckerChangeButton();
+requestCheckerName().then(() => render());
 </script>
+
+<div id="checkerLoginOverlay">
+  <div class="checker-login-card" role="dialog" aria-modal="true" aria-labelledby="checkerLoginTitle">
+    <h2 id="checkerLoginTitle">YOUR NAME</h2>
+    <p>Enter the name of the person checking the items. This name will be added to the final report.</p>
+    <input id="checkerLoginInput" type="text" inputmode="text" autocomplete="name" maxlength="50" placeholder="Type your name">
+    <div class="checker-login-error" id="checkerLoginError"></div>
+    <button type="button" id="checkerLoginSave">Continue</button>
+  </div>
+</div>
+
 </body>
 </html>
