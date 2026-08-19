@@ -2,11 +2,12 @@
 // DUX SCAN - CLOUDFLARE WORKER
 // =====================================================
 
-const ALLOWED_CHECKERS = new Set([
-  'Adrian',
-  'Leo',
-  'Liviu'
-]);
+function normalizeCheckerName(value) {
+  return String(value || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .slice(0, 50);
+}
 
 async function getResendApiKey(env) {
   const binding = env.RESEND_API_KEY;
@@ -56,23 +57,13 @@ async function sendReport(request, env) {
       ''
     );
 
-  const checkedBy =
-    String(
-      body.checkedBy
-      ||
-      ''
-    ).trim();
+  const checkedBy = normalizeCheckerName(body.checkedBy);
 
-  if (
-    !ALLOWED_CHECKERS.has(
-      checkedBy
-    )
-  ) {
+  if (checkedBy.length < 2) {
     return json(
       {
         ok: false,
-        error:
-          'Please select who checked the list: Adrian, Leo or Liviu.'
+        error: 'Please enter the name of the person who checked the list.'
       },
       400
     );
