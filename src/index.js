@@ -1,74 +1,38 @@
 // =====================================================
 // DUX SCAN - CLOUDFLARE WORKER
 // =====================================================
-//
-// The scanning itself happens entirely in the browser.
-// The Worker is only used to:
-//
-// 1. Serve the static website.
-// 2. Receive the XLSX report.
-// 3. Send the XLSX through Resend.
-//
-// =====================================================
 
+const ALLOWED_CHECKERS = new Set([
+  'Adrian',
+  'Leo',
+  'Liviu'
+]);
 
 async function getResendApiKey(env) {
-
-  const binding =
-    env.RESEND_API_KEY;
-
+  const binding = env.RESEND_API_KEY;
 
   if (!binding) {
     return null;
   }
 
-
-  // Cloudflare Secrets Store
-  if (
-    typeof binding.get === 'function'
-  ) {
-
+  if (typeof binding.get === 'function') {
     return await binding.get();
-
   }
 
-
-  // Compatibility fallback
-  // if configured as a normal Worker Secret.
-  if (
-    typeof binding === 'string'
-  ) {
-
+  if (typeof binding === 'string') {
     return binding;
-
   }
-
 
   return null;
 }
 
-
-// =====================================================
-// SEND EMAIL
-// =====================================================
-
-async function sendReport(
-  request,
-  env
-) {
-
+async function sendReport(request, env) {
   let body;
 
-
   try {
-
-    body =
-      await request.json();
-
+    body = await request.json();
   }
-
   catch (err) {
-
     return json(
       {
         ok: false,
@@ -76,9 +40,7 @@ async function sendReport(
       },
       400
     );
-
   }
-
 
   const filename =
     String(
@@ -87,7 +49,6 @@ async function sendReport(
       'DUX-Scan.xlsx'
     );
 
-
   const content =
     String(
       body.content
@@ -95,9 +56,29 @@ async function sendReport(
       ''
     );
 
+  const checkedBy =
+    String(
+      body.checkedBy
+      ||
+      ''
+    ).trim();
+
+  if (
+    !ALLOWED_CHECKERS.has(
+      checkedBy
+    )
+  ) {
+    return json(
+      {
+        ok: false,
+        error:
+          'Please select who checked the list: Adrian, Leo or Liviu.'
+      },
+      400
+    );
+  }
 
   if (!content) {
-
     return json(
       {
         ok: false,
@@ -105,21 +86,12 @@ async function sendReport(
       },
       400
     );
-
   }
 
-
-  // Basic protection against
-  // accidentally sending a huge payload.
-  //
-  // Base64 is larger than the original file,
-  // but DUX Scan reports should normally
-  // remain very small.
   if (
     content.length >
     8 * 1024 * 1024
   ) {
-
     return json(
       {
         ok: false,
@@ -127,9 +99,7 @@ async function sendReport(
       },
       413
     );
-
   }
-
 
   const recipients =
     (
@@ -144,11 +114,9 @@ async function sendReport(
       )
       .filter(Boolean);
 
-
   if (
     !recipients.length
   ) {
-
     return json(
       {
         ok: false,
@@ -157,18 +125,14 @@ async function sendReport(
       },
       500
     );
-
   }
-
 
   const apiKey =
     await getResendApiKey(
       env
     );
 
-
   if (!apiKey) {
-
     return json(
       {
         ok: false,
@@ -177,72 +141,52 @@ async function sendReport(
       },
       500
     );
-
   }
-
 
   const response =
     await fetch(
       'https://api.resend.com/emails',
       {
-
         method:
           'POST',
 
-
         headers: {
-
           'Authorization':
             'Bearer '
             +
             apiKey,
 
-
           'Content-Type':
             'application/json'
-
         },
-
 
         body:
           JSON.stringify({
-
             from:
               'DUX Scan <onboarding@resend.dev>',
-
 
             to:
               recipients,
 
-
             subject:
-              'DUX Scan — Barcode Report',
-
+              'DUX Scan — Barcode Report — checked by '
+              +
+              checkedBy,
 
             text:
-              'Attached is the current DUX Scan barcode report.',
-
+              'Attached is the current DUX Scan barcode report.\n\nChecked by: '
+              +
+              checkedBy,
 
             attachments: [
-
               {
-
-                filename:
-                  filename,
-
-
-                content:
-                  content
-
+                filename,
+                content
               }
-
             ]
-
           })
-
       }
     );
-
 
   const responseText =
     await response
@@ -251,17 +195,12 @@ async function sendReport(
         () => ''
       );
 
-
   if (
     !response.ok
   ) {
-
     return json(
       {
-
-        ok:
-          false,
-
+        ok: false,
 
         error:
           'Resend API error ('
@@ -271,79 +210,46 @@ async function sendReport(
           '): '
           +
           responseText
-
       },
       502
     );
-
   }
 
-
   return json({
-
-    ok:
-      true,
-
-
-    sent:
-      true
-
+    ok: true,
+    sent: true,
+    checkedBy
   });
-
 }
-
-
-// =====================================================
-// JSON RESPONSE
-// =====================================================
 
 function json(
   data,
   status = 200
 ) {
-
   return new Response(
     JSON.stringify(
       data
     ),
     {
-
       status,
 
-
       headers: {
-
         'content-type':
           'application/json'
-
       }
-
     }
   );
-
 }
 
-
-// =====================================================
-// MAIN WORKER
-// =====================================================
-
 export default {
-
   async fetch(
     request,
     env
   ) {
-
     const url =
       new URL(
         request.url
       );
-
-
-    // =============================================
-    // EMAIL API
-    // =============================================
 
     if (
       url.pathname ===
@@ -352,23 +258,14 @@ export default {
       request.method ===
         'POST'
     ) {
-
       return sendReport(
         request,
         env
       );
-
     }
-
-
-    // =============================================
-    // STATIC WEBSITE
-    // =============================================
 
     return env.ASSETS.fetch(
       request
     );
-
   }
-
 };
