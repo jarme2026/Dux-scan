@@ -48,7 +48,21 @@ async function sendReport(request, env) {
       body.filename
       ||
       'DUX-Scan.xlsx'
-    );
+    )
+      .replace(/[^\w.\- ]/g, '_')
+      .replace(/\.xlsx$/i, '')
+      .slice(0, 80)
+    + '.xlsx';
+
+  const summary =
+    String(
+      body.summary
+      ||
+      ''
+    ).slice(0, 2000);
+
+  const complete =
+    body.complete === true;
 
   const content =
     String(
@@ -160,14 +174,20 @@ async function sendReport(request, env) {
               recipients,
 
             subject:
-              'DUX Scan — Barcode Report — checked by '
+              'DUX Scan — Check Report'
+              +
+              (complete ? ' — COMPLETE' : ' — WITH DIFFERENCES')
+              +
+              ' — checked by '
               +
               checkedBy,
 
             text:
-              'Attached is the current DUX Scan barcode report.\n\nChecked by: '
+              'Attached is the DUX Scan check report.\n\nChecked by: '
               +
-              checkedBy,
+              checkedBy
+              +
+              (summary ? '\n\n' + summary : ''),
 
             attachments: [
               {
