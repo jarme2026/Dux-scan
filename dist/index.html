@@ -2,506 +2,1745 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#f6f1e4">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DUX Scan</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.7/html5-qrcode.min.js"></script>
 <style>
-:root{--paper:#F6F1E4;--line:#E4DBC4;--ink:#2E2A22;--soft:#6B6353;--green:#2F6B4F;--red:#A94438;--board:#C9BFA5;--dark:#8B8168;--card:#FFFEFA;--blue:#365F8D;--amber:#9A6A12}
-*{box-sizing:border-box} body{margin:0;min-height:100vh;font-family:Segoe UI,system-ui,-apple-system,sans-serif;color:var(--ink);background:var(--paper);padding:24px 12px 70px}
-.wrap{width:min(100%,1080px);margin:auto}.board{background:var(--card);border:1px solid var(--dark);border-radius:10px;box-shadow:0 2px 0 var(--dark),0 10px 24px rgba(60,50,30,.1);padding:26px}
-h1{margin:0 0 4px;font-family:'Courier New',monospace;font-size:28px;text-transform:uppercase}.subtitle{margin:0 0 20px;color:var(--soft);font-size:14px}
-.toolbar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}.btn{min-height:46px;border:1px solid var(--dark);border-radius:7px;background:var(--card);color:var(--ink);font:inherit;font-weight:600;cursor:pointer;padding:10px 12px}.btn.primary{border-color:var(--green);color:var(--green)}.btn.secondary{border-color:var(--blue);color:var(--blue)}.btn.danger{border-color:var(--red);color:var(--red)}.btn.solid{background:var(--green);border-color:var(--green);color:#fff}.btn:disabled{opacity:.5;cursor:default}
-.list-info{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:10px 12px;border:1px dashed var(--dark);border-radius:8px;font-size:13px;color:var(--soft)}.list-info strong{color:var(--ink);word-break:break-all}
-.stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;font-family:'Courier New',monospace;font-size:13px;color:var(--soft)}.stat{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:8px 10px}.stat strong{color:var(--green)}.stat.bad strong{color:var(--red)}
-.scanner-panel{display:none}.scanner-panel.open{display:block;position:fixed;top:0;left:0;right:0;width:100%;height:33vh;min-height:180px;background:#000;overflow:hidden;z-index:9998;box-shadow:0 6px 22px rgba(0,0,0,.35)}
-#reader{position:absolute;inset:0;width:100%!important;height:100%!important;overflow:hidden;border:0!important}#reader video{width:100%!important;height:100%!important;object-fit:cover!important}
-.scanner-head{position:absolute;top:8px;left:10px;right:10px;display:flex;justify-content:flex-end;z-index:10000}.scanner-head .btn{min-height:36px;padding:7px 11px;background:rgba(0,0,0,.72);border-color:#fff;color:#fff}
-.scan-status{position:absolute;left:10px;right:10px;bottom:8px;padding:7px 10px;background:rgba(0,0,0,.7);color:#fff;border-radius:6px;font-size:12px;text-align:center;z-index:10000}
-.manual{display:flex;gap:8px;margin-bottom:12px}.manual input{flex:1;min-width:0;min-height:46px;border:1px solid var(--dark);border-radius:7px;background:#fff;color:var(--ink);padding:10px 12px;font:inherit;font-size:16px;text-transform:uppercase}
-.filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.filters button{border:1px solid var(--dark);background:#fff;color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}.filters button.active{background:var(--ink);border-color:var(--ink);color:#fff}
-.table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px}table{width:100%;border-collapse:collapse;font-size:14px}thead th{background:var(--board);padding:10px 12px;text-align:left;font-family:'Courier New',monospace;font-size:12px;text-transform:uppercase}tbody td{padding:10px 12px;border-top:1px solid var(--line)}tbody tr:nth-child(even){background:#FBF8F0}
-tbody tr.st-ok{background:#E8F2EC}tbody tr.st-over{background:#F7E4E1}tbody tr.st-partial{background:#E7EEF6}tbody tr.flash{outline:3px solid var(--blue);outline-offset:-3px}
-.code{font-family:'Courier New',monospace;font-weight:700;word-break:break-all}
-.badge{display:inline-block;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:700;border:1px solid currentColor;white-space:nowrap}.badge.pending{color:var(--soft)}.badge.partial{color:var(--blue)}.badge.ok{color:var(--green)}.badge.over{color:var(--red)}
-.qty-wrap{display:flex;align-items:center;gap:8px}.qty-btn{width:34px;height:34px;border:1px solid var(--dark);border-radius:6px;background:#fff;font-size:18px;cursor:pointer}.qty{min-width:48px;text-align:center;font-weight:700}.delete-btn{border:1px solid var(--red);color:var(--red);background:#fff;border-radius:6px;padding:7px 9px;cursor:pointer}.empty{padding:38px 14px;text-align:center;color:var(--soft)}.footer{margin-top:16px;text-align:center;color:var(--soft);font-size:12px}
-h2.section{margin:22px 0 10px;font-family:'Courier New',monospace;font-size:16px;text-transform:uppercase;color:var(--red)}
-.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);width:min(calc(100% - 24px),520px);background:#2E2A22;color:#fff;border-radius:8px;padding:12px 14px;text-align:center;opacity:0;pointer-events:none;transition:.18s;z-index:100001}.toast.show{opacity:1;transform:translateX(-50%)}.toast.error{background:var(--red)}.toast.warn{background:var(--amber)}
-@media(max-width:720px){body{padding:10px 8px 50px}.board{padding:18px 12px}.toolbar{grid-template-columns:1fr 1fr}.manual{flex-direction:column}.manual .btn{width:100%}.table-scroll{border:none;overflow:visible}table,thead,tbody,tr,td{display:block;width:100%}thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}tbody tr{background:var(--card);border:1px solid var(--line);border-radius:9px;margin-bottom:10px;padding:12px}tbody td{border:0;padding:6px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:right}tbody td::before{content:attr(data-label);color:var(--soft);font-size:11px;text-transform:uppercase;font-family:'Courier New',monospace;text-align:left}}
+  :root{
+    --paper: #FDF8E1;
+    --paper-line: #F3E9B8;
+    --ink: #3A3320;
+    --ink-soft: #7D7248;
+    --stamp-green: #2F6B4F;
+    --stamp-green-bg: #E3EEE6;
+    --stamp-red: #A94438;
+    --board: #EBD873;
+    --board-dark: #B8A23A;
+    --card: #FFFEF6;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height:100vh;
+    padding: 40px 16px 80px;
+  }
+  .wrap{ max-width: 960px; margin: 0 auto; }
+  .clip{ width: 140px; height: 46px; margin: 0 auto -24px; position: relative; z-index: 2; }
+  .board{
+    background: var(--card);
+    border: 1px solid var(--board-dark);
+    border-radius: 6px;
+    box-shadow: 0 2px 0 var(--board-dark), 0 10px 24px rgba(60,50,30,0.12);
+    padding: 40px 36px 36px;
+    position: relative;
+  }
+  h1{
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 26px;
+    letter-spacing: 0.5px;
+    margin: 0 0 4px;
+    text-transform: uppercase;
+  }
+  .subtitle{ color: var(--ink-soft); font-size: 14px; margin: 0 0 28px; }
+  .drop{
+    border: 2px dashed var(--board-dark);
+    border-radius: 8px;
+    padding: 36px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    background: repeating-linear-gradient(0deg, transparent, transparent 27px, var(--paper-line) 28px);
+  }
+  .drop:hover, .drop.dragover{ border-color: var(--stamp-green); background: var(--stamp-green-bg); }
+  .drop svg{ opacity:0.55; margin-bottom: 8px; }
+  .drop p{ margin: 4px 0; font-size: 14px; color: var(--ink-soft); }
+  .drop strong{ color: var(--ink); font-family: 'Courier New', monospace; }
+  input[type=file]{ display:none; }
+  .controls{ display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin-bottom: 22px; }
+  .field{ display:flex; flex-direction:column; gap:6px; }
+  .field label{
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px;
+    color: var(--ink-soft); font-family: 'Courier New', monospace;
+  }
+  select, .btn, .search-input{
+    font-family: inherit; font-size: 14px; padding: 9px 12px;
+    border-radius: 5px; border: 1px solid var(--board-dark);
+    background: var(--card); color: var(--ink);
+  }
+  select{ min-width: 200px; cursor:pointer; }
+  .btn{ cursor: pointer; background: var(--card); transition: background 0.15s ease; }
+  .btn:hover{ background: var(--paper-line); }
+  .btn.danger{ color: var(--stamp-red); border-color: var(--stamp-red); }
+  .btn.danger:hover{ background: #FBEAE7; }
+  .fileinfo{ font-size: 13px; color: var(--ink-soft); margin-bottom: 18px; }
+  .fileinfo strong{ color: var(--ink); }
+  .search-wrap{ position: relative; margin-bottom: 16px; }
+  .search-input{ width: 100%; padding: 10px 14px 10px 36px; font-size: 15px; }
+  .search-wrap svg{
+    position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+    opacity: 0.5; pointer-events: none;
+  }
+  .search-count-row{
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 12px; margin: -8px 0 16px 2px; flex-wrap: wrap;
+  }
+  .search-count{ font-size: 15px; color: var(--ink-soft); margin: 0; font-family: 'Courier New', monospace; }
+  .total-sofas-wrap{ position: relative; }
+  .total-sofas{
+    font-size: 15px; color: var(--ink); font-family: 'Courier New', monospace;
+    font-weight: bold; white-space: nowrap; background: none; border: none;
+    padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px;
+  }
+  .total-sofas:hover{ color: var(--stamp-green); }
+  .total-sofas-breakdown{
+    display: none; position: absolute; right: 0; top: 100%; margin-top: 6px; z-index: 50;
+    background: var(--card); border: 1px solid var(--board-dark); border-radius: 6px;
+    padding: 10px 14px; box-shadow: 0 6px 18px rgba(0,0,0,0.16);
+    font-size: 13px; font-family: 'Courier New', monospace;
+  }
+  .total-sofas-breakdown.open{ display: block; }
+  .total-sofas-breakdown .breakdown-row{
+    display: flex; justify-content: space-between; gap: 18px; padding: 2px 0; white-space: nowrap;
+  }
+  .total-sofas-breakdown .breakdown-row strong{ color: var(--ink); }
+  .table-scroll{ overflow-x: auto; border: 1px solid var(--paper-line); border-radius: 6px; }
+  table{ border-collapse: collapse; width: 100%; font-size: 14px; }
+  thead th{
+    background: var(--board); color: var(--ink); text-align: left;
+    padding: 10px 14px; font-family: 'Courier New', monospace; font-size: 12px;
+    text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap;
+    position: sticky; top: 0;
+  }
+  thead th.tick-col{ text-align:center; }
+  thead th.notes-col{ min-width: 160px; }
+  td.notes-cell{ min-width: 160px; }
+  td.notes-cell.has-note{ color: var(--stamp-red); font-style: italic; }
+  .note-input{
+    width: 100%; font-family: inherit; font-size: 13px; padding: 6px 8px;
+    border: 1px solid var(--paper-line); border-radius: 4px; background: var(--card); color: var(--ink);
+  }
+  .note-input:focus{ border-color: var(--board-dark); outline: none; }
+  tbody td{ padding: 9px 14px; border-top: 1px solid var(--paper-line); white-space: nowrap; }
+  tbody tr:nth-child(even){ background: #FBF8F0; }
+  tbody tr.done td{ color: var(--ink-soft); }
+  tbody tr.hidden-row{ display: none; }
+  mark{ background: #FCE79B; color: inherit; padding: 0 1px; border-radius: 2px; }
+  td.tick-cell{ text-align:center; width: 110px; }
+  .stamp-box{
+    display:inline-flex; align-items:center; justify-content:center;
+    width: 30px; height: 30px; cursor: pointer; position: relative;
+  }
+  .stamp-box input{ display:none; }
+  .stamp-mark{
+    width: 26px; height: 26px; border: 2px solid var(--stamp-red); border-radius: 4px;
+    display:flex; align-items:center; justify-content:center; transition: transform 0.12s ease;
+  }
+  .stamp-box input:checked + .stamp-mark{ border-color: var(--stamp-green); transform: rotate(-6deg) scale(1.08); }
+  .stamp-mark svg{ width: 16px; height:16px; opacity: 0; transform: scale(0.5); transition: opacity 0.12s ease, transform 0.12s ease; }
+  .stamp-box input:checked + .stamp-mark svg{ opacity: 1; transform: scale(1); }
+  .stamp-date{ display:block; font-size: 10px; color: var(--ink-soft); margin-top: 2px; font-family: 'Courier New', monospace; }
+  .qty-input-wrap{ display:flex; align-items:center; justify-content:center; gap: 6px; }
+  .qty-btn{
+    width: 26px; height: 26px; border-radius: 5px; border: 1px solid var(--board-dark);
+    background: var(--card); color: var(--ink); font-size: 16px; line-height: 1;
+    cursor: pointer; display:flex; align-items:center; justify-content:center;
+    font-family: 'Courier New', monospace; user-select: none;
+  }
+  .qty-btn:hover:not(:disabled){ background: var(--paper-line); }
+  .qty-btn:disabled{ opacity: 0.35; cursor: default; }
+  .qty-all-btn{
+    width: auto; padding: 0 8px; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.3px; border-color: var(--stamp-green); color: var(--stamp-green);
+  }
+  .qty-all-btn:hover:not(:disabled){ background: var(--stamp-green-bg); }
+  .qty-value{
+    min-width: 22px; text-align:center; font-size: 14px; font-weight: bold;
+    font-family: 'Courier New', monospace; color: var(--ink);
+  }
+  .qty-value.full{ color: var(--stamp-green); }
+  .qty-input{
+    width: 52px; padding: 6px 4px; text-align:center; font-size: 14px;
+    border: 2px solid var(--board-dark); border-radius: 5px; font-family: 'Courier New', monospace;
+  }
+  .qty-input.full{ border-color: var(--stamp-green); background: var(--stamp-green-bg); }
+  .qty-total{ font-size: 12px; color: var(--ink-soft); font-family: 'Courier New', monospace; }
+  .empty{ text-align:center; padding: 40px 10px; color: var(--ink-soft); font-size: 14px; }
+  .footer-note{ margin-top: 18px; font-size: 12px; color: var(--ink-soft); text-align:center; }
+  .footer-note code{ background: var(--paper-line); padding: 1px 5px; border-radius: 3px; }
+  .progress-line{ font-family: 'Courier New', monospace; font-size: 13px; color: var(--ink-soft); margin-bottom: 14px; }
+  .progress-line strong{ color: var(--stamp-green); }
+  .all-done-banner{
+    background: var(--stamp-green-bg);
+    border: 1px solid var(--stamp-green);
+    color: var(--stamp-green);
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    font-weight: bold;
+    text-align: center;
+    padding: 10px 14px;
+    border-radius: 6px;
+    margin-bottom: 14px;
+    animation: popIn 0.25s ease;
+  }
+  @keyframes popIn{
+    from{ transform: scale(0.9); opacity: 0; }
+    to{ transform: scale(1); opacity: 1; }
+  }
 
-.checker-userbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 16px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--soft);font-size:13px}
-.checker-userbar strong{color:var(--ink)}
-.checker-userbar button{border:1px solid var(--dark);border-radius:6px;background:transparent;color:inherit;padding:7px 10px;cursor:pointer;font:inherit}
+  @media (max-width: 700px){
+    .note-input{ max-width: 55%; font-size: 16px; }
+    body{ padding: 20px 8px 60px; }
+    .clip{ display: none; }
+    .board{ padding: 22px 14px 26px; border-radius: 10px; }
+    h1{ font-size: 19px; }
+    .subtitle{ font-size: 13px; margin-bottom: 20px; }
+    .drop{ padding: 26px 12px; }
+    .controls{ flex-direction: column; align-items: stretch; gap: 12px; }
+    .field{ width: 100%; }
+    select{ min-width: 0; width: 100%; font-size: 16px; }
+    .btn{ width: 100%; text-align: center; padding: 12px; }
+    .fileinfo{ font-size: 12px; }
+    .search-input{ font-size: 16px; }
+    .table-scroll{ border: none; overflow: visible; }
+    table, thead, tbody, tr, td{ display: block; width: 100%; }
+    thead{ position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    tbody tr{
+      position: relative; background: var(--card); border: 1px solid var(--paper-line);
+      border-radius: 10px; margin-bottom: 12px; padding: 14px 100px 14px 16px;
+    }
+    tbody tr.hidden-row{ display: none; }
+    tbody tr.done{ background: var(--stamp-green-bg); }
+    tbody td{
+      border-top: none; padding: 5px 0; white-space: normal; display: flex;
+      justify-content: space-between; align-items: flex-start; gap: 14px;
+      font-size: 15px; word-break: break-word;
+    }
+    tbody td:not(.tick-cell)::before, tbody td.tick-cell-qty::before{
+      content: attr(data-label); color: var(--ink-soft); font-size: 11px;
+      text-transform: uppercase; letter-spacing: 0.4px; font-family: 'Courier New', monospace;
+      flex-shrink: 0; padding-top: 2px;
+    }
+    tbody tr:not(.qty-row){ padding: 14px 100px 14px 16px; }
+    tbody tr.qty-row{ padding: 14px 16px; }
+    td.tick-cell:not(.tick-cell-qty){ position: absolute; top: 12px; right: 12px; width: auto; padding: 0; }
+    td.tick-cell-qty{ padding: 5px 0; }
+    .stamp-box{ width: 46px; height: 46px; }
+    .stamp-mark{ width: 40px; height: 40px; border-width: 2.5px; }
+    .stamp-mark svg{ width: 22px; height: 22px; }
+    .stamp-date{ position: absolute; top: 50px; right: 0; white-space: nowrap; }
+    .tick-cell-qty .stamp-date{ position: static; display: block; text-align: right; }
+    .qty-input-wrap{ flex-direction: row; gap: 8px; align-items: center; }
+    .qty-btn{ width: 34px; height: 34px; font-size: 20px; }
+    .qty-all-btn{ width: auto; height: 34px; font-size: 12px; padding: 0 10px; }
+    .qty-value{ font-size: 16px; min-width: 26px; }
+    .qty-total{ font-size: 12px; }
+    .progress-line{ font-size: 12px; margin-bottom: 12px; }
+  }
 
-.overlay{position:fixed;inset:0;z-index:100000;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(30,25,15,.66);backdrop-filter:blur(3px)}
-.overlay.open{display:flex}
-.modal-card{width:min(100%,440px);max-height:calc(100vh - 36px);overflow:auto;background:#FFFEFA;color:#2E2A22;border:1px solid #8B8168;border-radius:12px;padding:22px;box-shadow:0 18px 50px rgba(0,0,0,.28)}
-.modal-card h2{margin:0 0 8px;font:700 20px 'Courier New',monospace}
-.modal-card p{margin:0 0 16px;color:#6B6353;font-size:14px;line-height:1.4}
-.modal-card label{display:block;margin:0 0 4px;font-size:12px;font-weight:700;text-transform:uppercase;color:var(--soft)}
-.modal-card input,.modal-card select{width:100%;padding:11px;margin-bottom:12px;border:1px solid #8B8168;border-radius:7px;background:#fff;color:#2E2A22;font:inherit;font-size:16px}
-.modal-error{min-height:18px;margin:-4px 0 8px;color:#A94438;font-size:12px}
-.modal-actions{display:flex;gap:8px;margin-top:6px}.modal-actions .btn{flex:1}
-.order-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
-.order-option{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;min-height:52px;padding:10px 14px;border:2px solid var(--green);border-radius:8px;background:#fff;color:var(--ink);font:inherit;cursor:pointer;text-align:left}
-.order-option strong{font-family:'Courier New',monospace;font-size:17px}
-.order-option.done{border-color:var(--line);color:var(--soft)}
-.order-option .prog{font-size:13px;font-weight:700}
+.checker-userbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin:0 0 16px;
+  padding:10px 12px;
+  border:1px solid var(--paper-line, #ddd2b8);
+  border-radius:8px;
+  background:var(--card, #fffefa);
+  color:var(--ink-soft, #6b6353);
+  font-size:13px;
+}
+.checker-userbar strong{color:var(--ink, #2e2a22);}
+.checker-userbar button{
+  border:1px solid var(--clip-dark, #8b8168);
+  border-radius:6px;
+  background:transparent;
+  color:inherit;
+  padding:7px 10px;
+  cursor:pointer;
+  font:inherit;
+}
+#checkerLoginOverlay{
+  position:fixed;
+  inset:0;
+  z-index:100000;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  background:rgba(30,25,15,.66);
+  backdrop-filter:blur(3px);
+}
+#checkerLoginOverlay.open{display:flex;}
+.checker-login-card{
+  width:min(100%,400px);
+  background:#FFFEFA;
+  color:#2E2A22;
+  border:1px solid #8B8168;
+  border-radius:12px;
+  padding:22px;
+  box-shadow:0 18px 50px rgba(0,0,0,.28);
+}
+.checker-login-card h2{
+  margin:0 0 8px;
+  font:700 20px 'Courier New',monospace;
+}
+.checker-login-card p{
+  margin:0 0 16px;
+  color:#6B6353;
+  font-size:14px;
+  line-height:1.4;
+}
+.checker-login-card input{
+  width:100%;
+  padding:12px;
+  margin-bottom:12px;
+  border:1px solid #8B8168;
+  border-radius:7px;
+  background:#fff;
+  color:#2E2A22;
+  font:inherit;
+  font-size:16px;
+}
+.checker-login-card .checker-login-error{
+  min-height:18px;
+  margin:-4px 0 8px;
+  color:#A94438;
+  font-size:12px;
+}
+.checker-login-card button{
+  width:100%;
+  min-height:44px;
+  border:1px solid #2F6B4F;
+  border-radius:7px;
+  background:#2F6B4F;
+  color:#fff;
+  font:inherit;
+  font-weight:700;
+  cursor:pointer;
+}
+
+/* ===== Barcode scanner ===== */
+.scan-btn{
+  width:100%; min-height:48px; margin-bottom:14px; font-weight:700; font-size:15px;
+  border-color: var(--stamp-green); color: var(--stamp-green);
+}
+.scan-btn:hover{ background: var(--stamp-green-bg); }
+.scan-btn:disabled{ opacity:.5; cursor:default; }
+.scanner-panel{ display:none; }
+.scanner-panel.open{
+  display:block; position:fixed; top:0; left:0; right:0; width:100%; height:33vh; min-height:180px;
+  background:#000; overflow:hidden; z-index:9998; box-shadow:0 6px 22px rgba(0,0,0,.35);
+}
+#reader{ position:absolute; inset:0; width:100%!important; height:100%!important; overflow:hidden; border:0!important; }
+#reader video{ width:100%!important; height:100%!important; object-fit:cover!important; }
+.scanner-head{ position:absolute; top:8px; left:10px; right:10px; display:flex; justify-content:flex-end; z-index:10000; }
+.scanner-head .btn{ width:auto; min-height:36px; padding:7px 11px; background:rgba(0,0,0,.72); border-color:#fff; color:#fff; }
+.scan-status{
+  position:absolute; left:10px; right:10px; bottom:8px; padding:7px 10px; background:rgba(0,0,0,.7);
+  color:#fff; border-radius:6px; font-size:12px; text-align:center; z-index:10000;
+}
+tbody tr.scan-flash{ outline:3px solid var(--stamp-green); outline-offset:-3px; }
+.scan-toast{
+  position:fixed; left:50%; bottom:22px; transform:translateX(-50%) translateY(20px);
+  width:min(calc(100% - 24px),520px); background:#2E2A22; color:#fff; border-radius:8px;
+  padding:12px 14px; text-align:center; opacity:0; pointer-events:none; transition:.18s; z-index:100001;
+}
+.scan-toast.show{ opacity:1; transform:translateX(-50%); }
+.scan-toast.error{ background: var(--stamp-red); }
+.scan-toast.warn{ background:#9A6A12; }
+#orderPickOverlay{
+  position:fixed; inset:0; z-index:100000; display:none; align-items:center; justify-content:center;
+  padding:18px; background:rgba(30,25,15,.66); backdrop-filter:blur(3px);
+}
+#orderPickOverlay.open{ display:flex; }
+.order-pick-card{
+  width:min(100%,440px); max-height:calc(100vh - 36px); overflow:auto; background:#FFFEFA; color:#2E2A22;
+  border:1px solid #8B8168; border-radius:12px; padding:22px; box-shadow:0 18px 50px rgba(0,0,0,.28);
+}
+.order-pick-card h2{ margin:0 0 8px; font:700 20px 'Courier New',monospace; }
+.order-pick-card p{ margin:0 0 16px; color:#6B6353; font-size:14px; line-height:1.4; word-break:break-word; }
+.order-pick-list{ display:flex; flex-direction:column; gap:8px; margin-bottom:12px; }
+.order-option{
+  display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%; min-height:54px;
+  padding:10px 14px; border:2px solid var(--stamp-green); border-radius:8px; background:#fff; color:var(--ink);
+  font:inherit; cursor:pointer; text-align:left;
+}
+.order-option.done{ border-color: var(--paper-line); color: var(--ink-soft); }
+.order-option strong{ display:block; font-family:'Courier New',monospace; font-size:16px; }
+.order-option small{ display:block; font-size:12px; color: var(--ink-soft); margin-top:2px; }
+.order-option .prog{ font-weight:700; font-family:'Courier New',monospace; white-space:nowrap; }
+.order-pick-cancel{ width:100%; }
+
 </style>
 </head>
 <body>
-<div class="wrap"><div class="board">
-<h1>DUX Scan</h1>
+<div class="wrap">
+  <svg class="clip" viewBox="0 0 140 46" xmlns="http://www.w3.org/2000/svg">
+    <rect x="45" y="0" width="50" height="30" rx="8" fill="#8B8168"/>
+    <rect x="55" y="14" width="30" height="20" rx="6" fill="#C9BFA5" stroke="#8B8168" stroke-width="2"/>
+  </svg>
+  <div class="board">
+    <h1>Check List — DUX</h1>
+    <p class="subtitle" id="subtitle">Import the sheet, pick the column to check off, and search anything inside it.</p>
 
 <div class="checker-userbar" id="checkerUserBar" style="display:none;">
   <div>Checking by: <strong id="checkerUserName"></strong></div>
   <button type="button" id="changeCheckerBtn">Change name</button>
 </div>
 
-<p class="subtitle">Load the expected list (Excel/CSV), scan barcodes to check it, and send the final Excel report by email.</p>
-<div class="toolbar">
-<button class="btn secondary" id="loadBtn">Load list</button>
-<button class="btn primary" id="scanBtn">Scan barcode</button>
-<button class="btn secondary" id="sendBtn">Send by email</button>
-<button class="btn danger" id="clearBtn">Clear</button>
+
+    <div id="uploadArea" style="display:none;">
+      <div class="drop" id="dropZone">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <p><strong>Click to choose</strong> or drop a file here</p>
+        <p>.xlsx, .xls, .csv or .txt</p>
+      </div>
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv,.txt">
+    </div>
+
+    <div id="emptyState" class="empty" style="display:none;">
+      No sheet has been loaded yet.
+    </div>
+
+    <div id="afterUpload" style="display:none;">
+      <div class="fileinfo admin-only" id="fileInfoBar">Sheet: <strong id="fileName"></strong> · <span id="rowCount"></span> rows · <a href="#" id="changeFile" style="color:var(--stamp-green);">replace file</a></div>
+
+      <div class="controls admin-only" id="adminControls">
+        <div class="field">
+          <label for="colSelect">Column to check</label>
+          <select id="colSelect"></select>
+        </div>
+        <div class="field">
+          <label for="qtyColSelect">Quantity column (optional)</label>
+          <select id="qtyColSelect"></select>
+        </div>
+        <button class="btn danger" id="resetBtn">Clear all progress</button>
+        <button class="btn" id="testReportBtn">Send test report now</button>
+      </div>
+
+      <button type="button" class="btn scan-btn" id="scanBtn">Scan barcode</button>
+      <div class="scanner-panel" id="scannerPanel">
+        <div class="scanner-head"><button type="button" class="btn" id="closeScannerBtn">Close camera</button></div>
+        <div id="reader"></div>
+        <div class="scan-status" id="scanStatus">Point the camera at a barcode.</div>
+      </div>
+
+      <div class="search-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="7"/>
+          <path d="M21 21l-4.35-4.35" stroke-linecap="round"/>
+        </svg>
+        <input type="text" class="search-input" id="searchInput" inputmode="numeric" pattern="[0-9]*" placeholder="Search anything in the sheet…">
+      </div>
+      <div class="search-count-row">
+        <div class="search-count" id="searchCount"></div>
+        <div class="total-sofas-wrap">
+          <button type="button" class="total-sofas" id="totalSofasBtn"></button>
+          <div class="total-sofas-breakdown" id="totalSofasBreakdown">
+            <div class="breakdown-row"><span>Sofas</span><strong id="sofaBreakdownSofas">0</strong></div>
+            <div class="breakdown-row"><span>Armchairs</span><strong id="sofaBreakdownArmchairs">0</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="progress-line" id="progressLine"></div>
+      <div class="all-done-banner" id="allDoneBanner" style="display:none;">
+        ✓ All items checked — this list is complete!
+      </div>
+
+      <div class="table-scroll">
+        <table id="dataTable"></table>
+      </div>
+    </div>
+
+    <p class="footer-note admin-only" id="footerAdminNote">This sheet stays saved even if you re-import it another day. The link with <code>?admin=1</code> gives upload access — only share that version with yourself, and share the plain link with everyone else.</p>
+    <p class="footer-note" id="footerViewerNote" style="display:none;">Your progress is saved automatically.</p>
+  </div>
 </div>
-<input type="file" id="fileInput" accept=".xlsx,.xls,.csv" hidden>
 
-<div class="list-info" id="listInfo"></div>
-<div class="stats" id="stats"></div>
-
-<div class="scanner-panel" id="scannerPanel"><div class="scanner-head"><button class="btn" id="closeScannerBtn">Close camera</button></div><div id="reader"></div><div class="scan-status" id="scanStatus">Point the camera at a barcode.</div></div>
-<div class="manual"><input id="manualCode" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Manual barcode entry"><button class="btn" id="addManualBtn">Add code</button><button class="btn" id="undoBtn">Undo last</button></div>
-
-<div class="filters" id="filters">
-  <button type="button" data-filter="all" class="active">All</button>
-  <button type="button" data-filter="pending">Pending</button>
-  <button type="button" data-filter="ok">OK</button>
-  <button type="button" data-filter="over">Over</button>
-</div>
-<div class="table-scroll"><table><thead><tr><th>Order</th><th>Barcode</th><th>Description</th><th>Scanned / Expected</th><th>Status</th></tr></thead><tbody id="tableBody"></tbody></table><div class="empty" id="emptyState">No list loaded. Tap “Load list” to import the Excel/CSV file.</div></div>
-
-<div id="extrasSection" style="display:none">
-<h2 class="section">Not on the list</h2>
-<div class="table-scroll"><table><thead><tr><th>Barcode</th><th>Quantity</th><th>Last scanned</th><th>Action</th></tr></thead><tbody id="extrasBody"></tbody></table></div>
-</div>
-
-<div class="footer">The list and the check progress are stored on this device. Refreshing the page will not erase them unless you clear.</div>
-</div></div>
-<div class="toast" id="toast"></div>
-
-<div id="checkerLoginOverlay" class="overlay">
-  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="checkerLoginTitle">
+<div id="checkerLoginOverlay">
+  <div class="checker-login-card" role="dialog" aria-modal="true" aria-labelledby="checkerLoginTitle">
     <h2 id="checkerLoginTitle">YOUR NAME</h2>
     <p>Enter the name of the person checking the items. This name will be added to the final report.</p>
     <input id="checkerLoginInput" type="text" inputmode="text" autocomplete="name" maxlength="50" placeholder="Type your name">
-    <div class="modal-error" id="checkerLoginError"></div>
-    <button type="button" class="btn solid" style="width:100%" id="checkerLoginSave">Continue</button>
+    <div class="checker-login-error" id="checkerLoginError"></div>
+    <button type="button" id="checkerLoginSave">Continue</button>
   </div>
 </div>
 
-<div id="mappingOverlay" class="overlay">
-  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="mappingTitle">
-    <h2 id="mappingTitle">IMPORT LIST</h2>
-    <p id="mappingFile"></p>
-    <div id="sheetWrap"><label for="mapSheet">Sheet</label><select id="mapSheet"></select></div>
-    <label for="mapBarcode">Barcode column *</label><select id="mapBarcode"></select>
-    <label for="mapOrder">Order column</label><select id="mapOrder"></select>
-    <label for="mapQty">Quantity column</label><select id="mapQty"></select>
-    <label for="mapDesc">Description column</label><select id="mapDesc"></select>
-    <div class="modal-error" id="mappingError"></div>
-    <div class="modal-actions"><button type="button" class="btn" id="mappingCancel">Cancel</button><button type="button" class="btn solid" id="mappingOk">Import</button></div>
+<div id="orderPickOverlay">
+  <div class="order-pick-card" role="dialog" aria-modal="true" aria-labelledby="orderPickTitle">
+    <h2 id="orderPickTitle">WHICH ORDER?</h2>
+    <p id="orderPickText"></p>
+    <div class="order-pick-list" id="orderPickList"></div>
+    <button type="button" class="btn order-pick-cancel" id="orderPickCancel">Cancel (do not count)</button>
   </div>
 </div>
 
-<div id="orderOverlay" class="overlay">
-  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="orderTitle">
-    <h2 id="orderTitle">WHICH ORDER?</h2>
-    <p id="orderText"></p>
-    <div class="order-list" id="orderList"></div>
-    <button type="button" class="btn" style="width:100%" id="orderCancel">Cancel (do not count)</button>
-  </div>
-</div>
+<div class="scan-toast" id="scanToast"></div>
 
 <script>
+
 const CHECKER_SESSION_KEY = 'checker_name_session';
-const STORAGE_KEY = 'dux_scan_check_v2';
-const NONE = '-1';
 
-const $ = id => document.getElementById(id);
-const scanBtn=$('scanBtn'),sendBtn=$('sendBtn'),clearBtn=$('clearBtn'),loadBtn=$('loadBtn'),undoBtn=$('undoBtn'),fileInput=$('fileInput'),scannerPanel=$('scannerPanel'),closeScannerBtn=$('closeScannerBtn'),scanStatus=$('scanStatus'),manualCode=$('manualCode'),addManualBtn=$('addManualBtn'),tableBody=$('tableBody'),emptyState=$('emptyState'),extrasSection=$('extrasSection'),extrasBody=$('extrasBody'),toast=$('toast');
+function cleanCheckerName(value){
+  return String(value || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .slice(0, 50);
+}
 
-let state = loadState();
-let filter = 'all', flashId = null;
-let scanner=null, scannerRunning=false, scanLocked=false, audioContext=null;
+function currentCheckerName(){
+  return cleanCheckerName(sessionStorage.getItem(CHECKER_SESSION_KEY) || '');
+}
 
-// ---------- Checker name ----------
-function cleanCheckerName(value){return String(value||'').trim().replace(/\s+/g,' ').slice(0,50)}
-function currentCheckerName(){return cleanCheckerName(sessionStorage.getItem(CHECKER_SESSION_KEY)||'')}
-function updateCheckerUserBar(){const name=currentCheckerName();$('checkerUserName').textContent=name;$('checkerUserBar').style.display=name?'flex':'none'}
-function requestCheckerName(forceChange=false){
-  return new Promise(resolve=>{
-    const existing=currentCheckerName();
-    if(existing&&!forceChange){updateCheckerUserBar();resolve(existing);return}
-    const overlay=$('checkerLoginOverlay'),input=$('checkerLoginInput'),error=$('checkerLoginError'),save=$('checkerLoginSave');
-    input.value=forceChange?existing:'';error.textContent='';overlay.classList.add('open');setTimeout(()=>input.focus(),50);
-    const submit=()=>{
-      const name=cleanCheckerName(input.value);
-      if(name.length<2){error.textContent='Please enter your name.';input.focus();return}
-      sessionStorage.setItem(CHECKER_SESSION_KEY,name);overlay.classList.remove('open');updateCheckerUserBar();cleanup();resolve(name);
+function updateCheckerUserBar(){
+  const name = currentCheckerName();
+  const bar = document.getElementById('checkerUserBar');
+  const label = document.getElementById('checkerUserName');
+  if (!bar || !label) return;
+  label.textContent = name;
+  bar.style.display = name ? 'flex' : 'none';
+}
+
+function requestCheckerName(forceChange = false){
+  return new Promise(resolve => {
+    const existing = currentCheckerName();
+    if (existing && !forceChange){
+      updateCheckerUserBar();
+      resolve(existing);
+      return;
+    }
+
+    const overlay = document.getElementById('checkerLoginOverlay');
+    const input = document.getElementById('checkerLoginInput');
+    const error = document.getElementById('checkerLoginError');
+    const save = document.getElementById('checkerLoginSave');
+
+    if (!overlay || !input || !save){
+      resolve(existing);
+      return;
+    }
+
+    input.value = forceChange ? existing : '';
+    error.textContent = '';
+    overlay.classList.add('open');
+    setTimeout(() => input.focus(), 50);
+
+    const submit = () => {
+      const name = cleanCheckerName(input.value);
+      if (name.length < 2){
+        error.textContent = 'Please enter your name.';
+        input.focus();
+        return;
+      }
+
+      sessionStorage.setItem(CHECKER_SESSION_KEY, name);
+      overlay.classList.remove('open');
+      updateCheckerUserBar();
+      cleanup();
+      resolve(name);
     };
-    const keyHandler=e=>{if(e.key==='Enter'){e.preventDefault();submit()}};
-    const cleanup=()=>{save.removeEventListener('click',submit);input.removeEventListener('keydown',keyHandler)};
-    save.addEventListener('click',submit);input.addEventListener('keydown',keyHandler);
+
+    const keyHandler = event => {
+      if (event.key === 'Enter'){
+        event.preventDefault();
+        submit();
+      }
+    };
+
+    const cleanup = () => {
+      save.removeEventListener('click', submit);
+      input.removeEventListener('keydown', keyHandler);
+    };
+
+    save.addEventListener('click', submit);
+    input.addEventListener('keydown', keyHandler);
   });
 }
 
-// ---------- State ----------
-function emptyState_(){return{listName:'',loadedAt:'',lines:[],extras:[],log:[]}}
-function loadState(){try{const v=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');if(v&&Array.isArray(v.lines))return Object.assign(emptyState_(),v)}catch{}return emptyState_()}
-function persist(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){console.error(e);showToast('Could not save progress on this device','error')}}
-function normalizeCode(v){return String(v??'').trim().toUpperCase()}
-// Excel drops leading zeros from numeric barcodes, so digit-only codes are matched without them
-function matchKey(code){return /^\d+$/.test(code)?(code.replace(/^0+/,'')||'0'):code}
-function nowText(){return new Date().toLocaleString()}
-function lineStatus(l){if(l.scanned===0)return'pending';if(l.scanned<l.expected)return'partial';if(l.scanned===l.expected)return'ok';return'over'}
-const STATUS_LABEL={pending:'Pending',partial:'Partial',ok:'OK',over:'Over'};
-
-// ---------- Feedback ----------
-function showToast(m,type=''){toast.textContent=m;toast.className='toast show'+(type?' '+type:'');clearTimeout(showToast.t);showToast.t=setTimeout(()=>toast.classList.remove('show'),2200)}
-function vibrate(p){if('vibrate'in navigator)navigator.vibrate(p)}
-function getAudioContext(){const C=window.AudioContext||window.webkitAudioContext;if(!C)return null;if(!audioContext)audioContext=new C();return audioContext}
-async function unlockAudio(){const c=getAudioContext();if(c&&c.state==='suspended'){try{await c.resume()}catch{}}}
-function playTone(delay=0,f=1500,d=.09){const c=getAudioContext();if(!c)return;const t=c.currentTime+delay,o=c.createOscillator(),g=c.createGain();o.type='square';o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(.65,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+d)}
-function beepOk(){playTone(0,1450,.095)}
-function beepDone(){playTone(0,1450,.08);playTone(.1,1900,.12)}
-function beepError(){playTone(0,320,.18);playTone(.22,320,.18)}
-
-// ---------- Scan logic ----------
-function chooseOrder(code,matches){
-  return new Promise(resolve=>{
-    const overlay=$('orderOverlay'),list=$('orderList');
-    const desc=matches.find(m=>m.description)?.description||'';
-    $('orderText').textContent=code+(desc?' — '+desc:'')+'. This item is on more than one order. Which order is it for?';
-    list.innerHTML='';
-    const finish=line=>{overlay.classList.remove('open');$('orderCancel').onclick=null;resolve(line)};
-    matches.forEach(l=>{
-      const b=document.createElement('button');
-      b.type='button';
-      b.className='order-option'+(l.scanned>=l.expected?' done':'');
-      const name=document.createElement('strong');name.textContent=l.order||'(no order)';
-      const prog=document.createElement('span');prog.className='prog';prog.textContent=l.scanned+' / '+l.expected+(l.scanned>=l.expected?' ✓':'');
-      b.append(name,prog);
-      b.onclick=()=>finish(l);
-      list.appendChild(b);
+function bindCheckerChangeButton(){
+  const btn = document.getElementById('changeCheckerBtn');
+  if (btn){
+    btn.addEventListener('click', () => {
+      requestCheckerName(true);
     });
-    $('orderCancel').onclick=()=>finish(null);
+  }
+  updateCheckerUserBar();
+}
+
+
+let headers = [];
+let rows = [];
+let tickColIndex = -1;
+let qtyColIndex = -1;
+let rowKeys = [];
+let allTicks = {};
+let allNotes = {};
+let wasAllDone = false;
+let rowRefs = [];
+let pollTimer = null;
+let saveTimers = {};
+
+const fileInput = document.getElementById('fileInput');
+const dropZone = document.getElementById('dropZone');
+const uploadArea = document.getElementById('uploadArea');
+const afterUpload = document.getElementById('afterUpload');
+const emptyState = document.getElementById('emptyState');
+const fileNameEl = document.getElementById('fileName');
+const rowCountEl = document.getElementById('rowCount');
+const colSelect = document.getElementById('colSelect');
+const qtyColSelect = document.getElementById('qtyColSelect');
+const resetBtn = document.getElementById('resetBtn');
+const changeFile = document.getElementById('changeFile');
+const progressLine = document.getElementById('progressLine');
+const subtitleEl = document.getElementById('subtitle');
+const footerViewerNote = document.getElementById('footerViewerNote');
+const searchInput = document.getElementById('searchInput');
+const searchCount = document.getElementById('searchCount');
+
+const urlParams = new URLSearchParams(location.search);
+const isAdmin = urlParams.get('admin') === '1';
+
+if (!isAdmin){
+  document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+  footerViewerNote.style.display = 'block';
+  subtitleEl.textContent = 'Check off or update quantities below, and search anything in the list.';
+}
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => {
+  if (e.target.files.length) handleFile(e.target.files[0]);
+});
+changeFile.addEventListener('click', e => {
+  e.preventDefault();
+  afterUpload.style.display = 'none';
+  uploadArea.style.display = 'block';
+  fileInput.value = '';
+});
+
+function handleFile(file){
+  const ext = file.name.split('.').pop().toLowerCase();
+
+  if (ext === 'txt'){
+    const reader = new FileReader();
+    reader.onload = async evt => {
+      try{
+        const parsed = parseDelimitedText(evt.target.result);
+        if (!parsed) return;
+        await applyParsedData(parsed.headers, parsed.rows, file.name);
+      }catch(err){
+        console.error(err);
+        alert('Could not read that .txt file.');
+      }
+    };
+    reader.readAsText(file);
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = async evt => {
+    await processWorkbookArrayBuffer(evt.target.result, file.name);
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+async function processWorkbookArrayBuffer(arrayBuffer, displayName){
+  try{
+    const data = new Uint8Array(arrayBuffer);
+    const wb = XLSX.read(data, { type: 'array' });
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    const json = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+    if (!json.length){
+      alert('This sheet looks empty.');
+      return;
+    }
+    const parsedHeaders = json[0].map(h => String(h ?? '').trim() || '(no name)');
+    const parsedRows = json.slice(1).filter(r => r.some(c => String(c ?? '').trim() !== ''));
+    if (!parsedRows.length){
+      alert('No data rows found.');
+      return;
+    }
+    await applyParsedData(parsedHeaders, parsedRows, displayName);
+  }catch(err){
+    console.error(err);
+    alert('Could not read that file. Make sure it is a valid .xlsx, .xls, .csv or .txt.');
+  }
+}
+
+function parseDelimitedText(text){
+  const lines = text.split(/\r\n|\r|\n/).filter(l => l.trim() !== '');
+  if (!lines.length){
+    alert('This file looks empty.');
+    return null;
+  }
+  const delimiter = lines[0].includes('\t') ? '\t' : (lines[0].includes(',') ? ',' : null);
+  let parsedHeaders, parsedRows;
+  if (delimiter){
+    parsedHeaders = lines[0].split(delimiter).map(h => h.trim() || '(no name)');
+    parsedRows = lines.slice(1).map(l => l.split(delimiter).map(c => c.trim()));
+    if (!parsedRows.length){
+      alert('No data rows found.');
+      return null;
+    }
+  } else {
+    parsedHeaders = ['Item'];
+    parsedRows = lines.map(l => [l.trim()]);
+  }
+  return { headers: parsedHeaders, rows: parsedRows };
+}
+
+async function applyParsedData(parsedHeaders, parsedRows, displayName){
+  headers = parsedHeaders;
+  rows = parsedRows;
+  allTicks = {};
+  allNotes = {};
+  wasAllDone = false;
+  fileNameEl.textContent = displayName;
+  rowCountEl.textContent = rows.length;
+  uploadArea.style.display = 'none';
+  emptyState.style.display = 'none';
+  afterUpload.style.display = 'block';
+  setupColumnSelects();
+  buildKeys();
+  const ok = await saveDataset();
+  if (ok){
+    renderTable();
+    startPolling();
+  }
+}
+
+function setupColumnSelects(presetTickIndex, presetQtyIndex){
+  colSelect.innerHTML = '';
+  qtyColSelect.innerHTML = '';
+
+  const noneOpt = document.createElement('option');
+  noneOpt.value = '-1';
+  noneOpt.textContent = '(none — always a checkbox)';
+  qtyColSelect.appendChild(noneOpt);
+
+  headers.forEach((h, i) => {
+    const opt1 = document.createElement('option');
+    opt1.value = i;
+    opt1.textContent = h;
+    colSelect.appendChild(opt1);
+
+    const opt2 = document.createElement('option');
+    opt2.value = i;
+    opt2.textContent = h;
+    qtyColSelect.appendChild(opt2);
+  });
+
+  if (typeof presetTickIndex === 'number'){
+    tickColIndex = presetTickIndex;
+  } else {
+    const guessIdx = headers.findIndex(h => /check|tick|done|complete|status|ok\b/i.test(h));
+    tickColIndex = guessIdx >= 0 ? guessIdx : headers.length - 1;
+  }
+  colSelect.value = tickColIndex;
+
+  if (typeof presetQtyIndex === 'number'){
+    qtyColIndex = presetQtyIndex;
+  } else {
+    const qtyGuess = headers.findIndex(h => /qty|quantity|quant/i.test(h));
+    qtyColIndex = qtyGuess >= 0 ? qtyGuess : -1;
+  }
+  qtyColSelect.value = qtyColIndex;
+
+  colSelect.onchange = async () => {
+    tickColIndex = parseInt(colSelect.value, 10);
+    const ok = await saveDataset();
+    if (ok) renderTable();
+  };
+  qtyColSelect.onchange = async () => {
+    qtyColIndex = parseInt(qtyColSelect.value, 10);
+    const ok = await saveDataset();
+    if (ok) renderTable();
+  };
+}
+
+function hashRow(rowArr){
+  const str = rowArr.map(c => String(c ?? '').trim().toLowerCase()).join('|');
+  let h = 0;
+  for (let i = 0; i < str.length; i++){
+    h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
+  }
+  return 'r' + (h >>> 0).toString(36);
+}
+
+function buildKeys(){
+  const seen = {};
+  rowKeys = rows.map((r) => {
+    let base = hashRow(r);
+    seen[base] = (seen[base] || 0) + 1;
+    return seen[base] > 1 ? base + 'd' + seen[base] : base;
+  });
+}
+
+function parseExpectedQty(row){
+  if (qtyColIndex < 0 || !row[qtyColIndex] && row[qtyColIndex] !== 0) return 1;
+  const raw = String(row[qtyColIndex]).trim();
+  if (!raw) return 1;
+  const normalized = raw.replace(/\./g, '').replace(',', '.').replace(/[^0-9.\-]/g, '');
+  const n = Math.round(Math.abs(parseFloat(normalized)));
+  return Number.isFinite(n) && n > 0 ? n : 1;
+}
+
+// "Total sofas": sum of the Quantity column for every row whose
+// description (any column, matched the same way the search bar already
+// does) is one of the SOFA_KEYWORDS phrases, a chaise longue (the sheet
+// spells it several ways — "chaise longue", "chaiselong", "chaise-long",
+// no trailing "ue" — so CHAISE_LONGUE_PATTERN treats the space/hyphen and
+// the "ue" ending as optional), or a 1/1.5/2/2.5/3-seater/seating — the
+// hyphen in "2-Seater" style descriptions is optional so both "2 Seater"
+// and "2-Seater" match.
+const SOFA_KEYWORDS = ['corner module', 'resting unit', 'basic unit', 'armchair', 'open end left', 'open end right', 'sofa sleeper'];
+const SOFA_SEATER_PATTERN = /\b(1[.,]5|2[.,]5|1|2|3)[\s-]*seat(er|ing)\b/i;
+const CHAISE_LONGUE_PATTERN = /chaise[\s-]?long/i;
+// "Chair" on its own (dining chair, seat for chair/barstool/bench) is
+// never a sofa, but "armchair" is a real sofa module (SOFA_KEYWORDS) — the
+// negative lookbehind only excludes a bare "chair", never the one inside
+// "armchair", so armchair rows still fall through to the checks below.
+const CHAIR_EXCLUDE_PATTERN = /(?<!arm)chair/i;
+
+// Splits a row into 'sofa' (any SOFA_KEYWORDS term other than armchair, a
+// seater/seating, or a chaise longue), 'armchair', or null (not counted at
+// all — a real chair/barstool/bench, or nothing sofa-related). A row never
+// counts as both; armchair only wins when nothing else on the row matched.
+function classifySofaRow(row){
+  const text = row.map(c => String(c ?? '')).join(' ').toLowerCase();
+
+  if (CHAIR_EXCLUDE_PATTERN.test(text)) return null;
+
+  const matchesOtherSofaTerm =
+    SOFA_KEYWORDS.some(kw => kw !== 'armchair' && text.includes(kw))
+    || SOFA_SEATER_PATTERN.test(text)
+    || CHAISE_LONGUE_PATTERN.test(text);
+
+  if (matchesOtherSofaTerm) return 'sofa';
+  if (text.includes('armchair')) return 'armchair';
+  return null;
+}
+
+function rowIsSofaCategory(row){
+  return classifySofaRow(row) !== null;
+}
+
+function updateTotalSofas(){
+  const btn = document.getElementById('totalSofasBtn');
+  if (!btn) return;
+
+  let sofaTotal = 0;
+  let armchairTotal = 0;
+
+  rows.forEach(row => {
+    const kind = classifySofaRow(row);
+    if (kind === 'sofa') sofaTotal += parseExpectedQty(row);
+    else if (kind === 'armchair') armchairTotal += parseExpectedQty(row);
+  });
+
+  btn.textContent = 'total sofas ' + (sofaTotal + armchairTotal);
+  btn.parentElement.style.display = (sofaTotal + armchairTotal) ? '' : 'none';
+
+  const sofasEl = document.getElementById('sofaBreakdownSofas');
+  const armchairsEl = document.getElementById('sofaBreakdownArmchairs');
+  if (sofasEl) sofasEl.textContent = sofaTotal;
+  if (armchairsEl) armchairsEl.textContent = armchairTotal;
+}
+
+const totalSofasBtn = document.getElementById('totalSofasBtn');
+const totalSofasBreakdown = document.getElementById('totalSofasBreakdown');
+
+if (totalSofasBtn && totalSofasBreakdown){
+  totalSofasBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    totalSofasBreakdown.classList.toggle('open');
+  });
+
+  document.addEventListener('click', e => {
+    if (!totalSofasBreakdown.contains(e.target) && e.target !== totalSofasBtn){
+      totalSofasBreakdown.classList.remove('open');
+    }
+  });
+}
+
+async function loadState(){
+  try{
+    const res = await fetch('/api/state');
+    if (!res.ok) return null;
+    return await res.json();
+  }catch(e){
+    console.error('Could not load state', e);
+    return null;
+  }
+}
+
+async function loadTicksOnly(){
+  try{
+    const res = await fetch('/api/ticks');
+    if (!res.ok) return null;
+    return await res.json();
+  }catch(e){
+    console.error('Could not load ticks', e);
+    return null;
+  }
+}
+
+async function saveDataset(){
+  try{
+    const res = await fetch('/api/dataset', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ headers, rows, tickColIndex, qtyColIndex })
+    });
+    if (!res.ok){
+      alert('Could not save the sheet. Please try again.');
+      return false;
+    }
+    return true;
+  }catch(e){
+    console.error(e);
+    alert('Could not reach the server to save the sheet.');
+    return false;
+  }
+}
+
+async function saveNote(key, note){
+  try{
+    const res = await fetch('/api/note', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ key, note, checkedBy: currentCheckerName() })
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data && data.notes) allNotes = data.notes;
+    return data;
+  }catch(e){
+    console.error('Failed to save note', e);
+    return null;
+  }
+}
+
+async function saveTickSet(key, value, expected){
+  try{
+    const res = await fetch('/api/tick', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ key, mode: 'set', value: value.qty, expected, checkedBy: currentCheckerName() })
+    });
+    if (!res.ok) return null;
+    return await res.json(); // { ok, qty, date, ticks }
+  }catch(e){
+    console.error('Failed to save progress', e);
+    return null;
+  }
+}
+
+async function saveTickDelta(key, delta, expected){
+  try{
+    const res = await fetch('/api/tick', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ key, mode: 'delta', value: delta, expected, checkedBy: currentCheckerName() })
+    });
+    if (!res.ok) return null;
+    return await res.json(); // { ok, qty, date, ticks } — the server's authoritative value
+  }catch(e){
+    console.error('Failed to save progress', e);
+    return null;
+  }
+}
+
+async function resetAllTicks(){
+  try{
+    const res = await fetch('/api/reset', { method: 'POST' });
+    return res.ok;
+  }catch(e){
+    console.error(e);
+    return false;
+  }
+}
+
+function updateProgress(){
+  let doneRows = 0;
+  rows.forEach((row, ri) => {
+    const expected = parseExpectedQty(row);
+    const state = allTicks[rowKeys[ri]];
+    const done = state ? (state.qty || 0) : 0;
+    if (done >= expected) doneRows++;
+  });
+  progressLine.innerHTML = '<strong>' + doneRows + '</strong> of ' + rows.length + ' complete';
+
+  const allDoneBanner = document.getElementById('allDoneBanner');
+  const isAllDone = rows.length > 0 && doneRows === rows.length;
+  allDoneBanner.style.display = isAllDone ? 'block' : 'none';
+  if (!isAllDone){
+    allDoneBanner.textContent = '✓ All items checked — this list is complete!';
+  }
+
+  // Send only after the server confirms shared completion.
+  wasAllDone = isAllDone;
+}
+
+let reportSendInFlight = false;
+
+async function maybeSendReport(){
+  if (reportSendInFlight) return;
+  reportSendInFlight = true;
+
+  try{
+    const checkedBy = currentCheckerName() || await requestCheckerName();
+
+    if (!checkedBy){
+      alert('Please enter the checker name before sending the report.');
+      return;
+    }
+
+    const res = await fetch('/api/send-report', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ checkedBy })
+    });
+
+    let data = null;
+    try{ data = await res.json(); }catch(e){}
+
+    if (!res.ok){
+      console.error('Send report failed', data);
+      alert('Could not send the report email: ' + (data && data.error ? data.error : ('HTTP ' + res.status)));
+      return;
+    }
+
+    if (data && data.sent){
+      const banner = document.getElementById('allDoneBanner');
+      if (banner){
+        banner.textContent = '✓ All items completed — report emailed. Checked by: ' + checkedBy;
+      }
+    } else if (data && data.skipped && typeof isAdmin !== 'undefined' && isAdmin){
+      console.log('Report not sent:', data.reason);
+    }
+  }catch(e){
+    console.error('Failed to send report', e);
+    alert('Could not reach the server to send the report.');
+  }finally{
+    reportSendInFlight = false;
+  }
+}
+
+function applySearchFilter(){
+  const term = searchInput.value.trim().toLowerCase();
+  const trs = document.querySelectorAll('#dataTable tbody tr');
+  let visible = 0;
+  let matches = 0;
+  trs.forEach(tr => {
+    const text = tr.getAttribute('data-search') || '';
+    const isComplete = tr.getAttribute('data-complete') === '1';
+    const matchesTerm = !term || text.includes(term);
+    // With no search: hide completed items to keep the list light.
+    // With a search: show anything matching, even if already checked —
+    // that's how a checked item can be found again and un-checked.
+    const show = term ? matchesTerm : (matchesTerm && !isComplete);
+    tr.classList.toggle('hidden-row', !show);
+    if (show) visible++;
+    if (term && matchesTerm) matches++;
+  });
+  searchCount.textContent = term
+    ? (matches + ' of ' + rows.length + ' rows match')
+    : 'Checked items are hidden — search to find and undo one.';
+}
+
+searchInput.addEventListener('input', applySearchFilter);
+
+function renderTable(){
+  const table = document.getElementById('dataTable');
+  table.innerHTML = '';
+  rowRefs = [];
+
+  const thead = document.createElement('thead');
+  const trh = document.createElement('tr');
+  headers.forEach((h, i) => {
+    const th = document.createElement('th');
+    th.textContent = i === tickColIndex ? '✓' : h;
+    if (i === tickColIndex) th.classList.add('tick-col');
+    trh.appendChild(th);
+  });
+  const notesHeader = document.createElement('th');
+  notesHeader.textContent = 'Notes';
+  notesHeader.className = 'notes-col';
+  trh.appendChild(notesHeader);
+  thead.appendChild(trh);
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  table.appendChild(tbody);
+
+  rows.forEach((row, ri) => {
+    const tr = document.createElement('tr');
+    const expected = parseExpectedQty(row);
+    const state = allTicks[rowKeys[ri]];
+    const done = state ? (state.qty || 0) : 0;
+    const isComplete = done >= expected;
+    if (isComplete) tr.classList.add('done');
+    if (expected > 1) tr.classList.add('qty-row');
+    tr.setAttribute('data-complete', isComplete ? '1' : '0');
+    tr.setAttribute('data-search', row.map(c => String(c ?? '')).join(' ').toLowerCase());
+
+    const ref = { tr, expected, control: null, td: null };
+
+    row.forEach((cell, ci) => {
+      const td = document.createElement('td');
+      td.setAttribute('data-label', headers[ci]);
+      if (ci === tickColIndex){
+        td.classList.add('tick-cell');
+        if (expected > 1) td.classList.add('tick-cell-qty');
+        ref.td = td;
+
+        if (expected <= 1){
+          const label = document.createElement('label');
+          label.className = 'stamp-box';
+          const input = document.createElement('input');
+          input.type = 'checkbox';
+          input.checked = done >= 1;
+          const mark = document.createElement('span');
+          mark.className = 'stamp-mark';
+          mark.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5L20 6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+          label.appendChild(input);
+          label.appendChild(mark);
+          td.appendChild(label);
+          if (done >= 1 && state && state.date){
+            const dateEl = document.createElement('span');
+            dateEl.className = 'stamp-date';
+            dateEl.textContent = state.date;
+            td.appendChild(dateEl);
+          }
+          input.addEventListener('change', async () => {
+            const newQty = input.checked ? 1 : 0;
+            const dateStr = input.checked ? new Date().toLocaleDateString('en-US') : '';
+            allTicks[rowKeys[ri]] = { qty: newQty, date: dateStr };
+            ref.lastEditAt = Date.now();
+            tr.classList.toggle('done', newQty >= 1);
+            tr.setAttribute('data-complete', newQty >= 1 ? '1' : '0');
+            const existingDate = td.querySelector('.stamp-date');
+            if (existingDate) existingDate.remove();
+            if (newQty >= 1){
+              const dateEl = document.createElement('span');
+              dateEl.className = 'stamp-date';
+              dateEl.textContent = dateStr;
+              td.appendChild(dateEl);
+            }
+            updateProgress();
+            applySearchFilter();
+            const result = await saveTickSet(rowKeys[ri], allTicks[rowKeys[ri]], expected);
+            if (result && result.ticks) applyRemoteState(result.ticks);
+            if (result && result.allComplete){
+              await maybeSendReport();
+            }
+          });
+          ref.control = input;
+        } else {
+          const wrap = document.createElement('div');
+          wrap.className = 'qty-input-wrap';
+
+          const minusBtn = document.createElement('button');
+          minusBtn.type = 'button';
+          minusBtn.className = 'qty-btn';
+          minusBtn.textContent = '−';
+
+          const valueEl = document.createElement('span');
+          valueEl.className = 'qty-value' + (done >= expected ? ' full' : '');
+          valueEl.textContent = String(done);
+
+          const plusBtn = document.createElement('button');
+          plusBtn.type = 'button';
+          plusBtn.className = 'qty-btn';
+          plusBtn.textContent = '+';
+
+          const totalLabel = document.createElement('span');
+          totalLabel.className = 'qty-total';
+          totalLabel.textContent = '/ ' + expected;
+
+          wrap.appendChild(minusBtn);
+          wrap.appendChild(valueEl);
+          wrap.appendChild(plusBtn);
+          wrap.appendChild(totalLabel);
+
+          let allBtn = null;
+          if (expected > 6){
+            allBtn = document.createElement('button');
+            allBtn.type = 'button';
+            allBtn.className = 'qty-btn qty-all-btn';
+            allBtn.textContent = 'All';
+            wrap.appendChild(allBtn);
+          }
+
+          td.appendChild(wrap);
+          if (done >= 1 && state && state.date){
+            const dateEl = document.createElement('span');
+            dateEl.className = 'stamp-date';
+            dateEl.textContent = state.date;
+            td.appendChild(dateEl);
+          }
+
+          let currentVal = done;
+          let pendingDelta = 0;
+
+          const applyQtyUI = (val) => {
+            valueEl.textContent = String(val);
+            valueEl.classList.toggle('full', val >= expected);
+            minusBtn.disabled = val <= 0;
+            plusBtn.disabled = val >= expected;
+            if (allBtn) allBtn.disabled = val >= expected;
+            const isComplete = val >= expected;
+            tr.classList.toggle('done', isComplete);
+            tr.setAttribute('data-complete', isComplete ? '1' : '0');
+            applySearchFilter();
+          };
+          applyQtyUI(currentVal);
+
+          const setDateLabel = (dateStr) => {
+            const existingDate = td.querySelector('.stamp-date');
+            if (existingDate) existingDate.remove();
+            if (dateStr){
+              const dateEl = document.createElement('span');
+              dateEl.className = 'stamp-date';
+              dateEl.textContent = dateStr;
+              td.appendChild(dateEl);
+            }
+          };
+
+          const flushDelta = () => {
+            if (saveTimers[ri]) clearTimeout(saveTimers[ri]);
+            saveTimers[ri] = setTimeout(async () => {
+              const delta = pendingDelta;
+              pendingDelta = 0;
+              if (delta === 0) return;
+              // The server applies this delta atomically (Durable Object)
+              // and tells us the real, authoritative result — two people
+              // clicking +1 at the same moment can never cancel each
+              // other out, unlike sending an absolute number.
+              const result = await saveTickDelta(rowKeys[ri], delta, expected);
+              if (result && typeof result.qty === 'number'){
+                currentVal = result.qty;
+                allTicks[rowKeys[ri]] = { qty: result.qty, date: result.date };
+                applyQtyUI(currentVal);
+                setDateLabel(result.date);
+                updateProgress();
+              }
+              if (result && result.ticks) applyRemoteState(result.ticks);
+              if (result && result.allComplete){
+                await maybeSendReport();
+              }
+            }, 450);
+          };
+
+          const bump = (amount) => {
+            const next = currentVal + amount;
+            if (next < 0 || next > expected) return;
+            currentVal = next;
+            pendingDelta += amount;
+            allTicks[rowKeys[ri]] = { qty: currentVal, date: currentVal > 0 ? new Date().toLocaleDateString('en-US') : '' };
+            ref.lastEditAt = Date.now();
+            applyQtyUI(currentVal);
+            setDateLabel(allTicks[rowKeys[ri]].date);
+            updateProgress();
+            flushDelta();
+          };
+
+          minusBtn.addEventListener('click', () => bump(-1));
+          plusBtn.addEventListener('click', () => bump(1));
+          if (allBtn) allBtn.addEventListener('click', () => bump(expected - currentVal));
+
+          ref.control = wrap;
+          ref.getQtyVal = () => currentVal;
+          ref.setQtyVal = (val) => { currentVal = val; applyQtyUI(val); };
+        }
+      } else {
+        td.textContent = cell;
+      }
+      tr.appendChild(td);
+    });
+
+    const notesTd = document.createElement('td');
+    notesTd.className = 'notes-cell';
+    notesTd.setAttribute('data-label', 'Notes');
+    const existingNote = allNotes[rowKeys[ri]] || '';
+
+    if (isAdmin){
+      const noteInput = document.createElement('input');
+      noteInput.type = 'text';
+      noteInput.className = 'note-input';
+      noteInput.placeholder = 'e.g. out of stock…';
+      noteInput.value = existingNote;
+      let noteTimer = null;
+      noteInput.addEventListener('input', () => {
+        if (noteTimer) clearTimeout(noteTimer);
+        noteTimer = setTimeout(async () => {
+          allNotes[rowKeys[ri]] = noteInput.value;
+          const noteResult = await saveNote(rowKeys[ri], noteInput.value);
+          if (noteResult && noteResult.allComplete){
+            await maybeSendReport();
+          }
+        }, 500);
+      });
+      notesTd.appendChild(noteInput);
+      ref.noteInput = noteInput;
+    } else {
+      notesTd.textContent = existingNote;
+      notesTd.className += existingNote ? ' has-note' : '';
+    }
+    tr.appendChild(notesTd);
+    ref.notesTd = notesTd;
+
+    tbody.appendChild(tr);
+    rowRefs.push(ref);
+  });
+
+  updateProgress();
+  applySearchFilter();
+  updateTotalSofas();
+}
+
+function applyRemoteState(newTicks){
+  let changed = false;
+  rows.forEach((row, ri) => {
+    const key = rowKeys[ri];
+    const incoming = newTicks[key] || { qty: 0, date: '' };
+    const current = allTicks[key] || { qty: 0, date: '' };
+    if (incoming.qty === current.qty && incoming.date === current.date) return;
+
+    const ref = rowRefs[ri];
+    if (!ref) { allTicks[key] = incoming; changed = true; return; }
+    if (document.activeElement === ref.control) return; // don't clobber active typing
+    if (ref.lastEditAt && Date.now() - ref.lastEditAt < 2000) return; // don't clobber a save in flight
+
+    allTicks[key] = incoming;
+    changed = true;
+
+    const isComplete = incoming.qty >= ref.expected;
+    ref.tr.classList.toggle('done', isComplete);
+    ref.tr.setAttribute('data-complete', isComplete ? '1' : '0');
+
+    if (ref.control.type === 'checkbox'){
+      ref.control.checked = incoming.qty >= 1;
+    } else if (ref.setQtyVal){
+      ref.setQtyVal(incoming.qty);
+    }
+
+    const existingDate = ref.td.querySelector('.stamp-date');
+    if (existingDate) existingDate.remove();
+    if (incoming.qty > 0 && incoming.date){
+      const dateEl = document.createElement('span');
+      dateEl.className = 'stamp-date';
+      dateEl.textContent = incoming.date;
+      ref.td.appendChild(dateEl);
+    }
+  });
+  if (changed){
+    updateProgress();
+    applySearchFilter();
+  }
+}
+
+function applyRemoteNotes(newNotes){
+  rows.forEach((row, ri) => {
+    const key = rowKeys[ri];
+    const incoming = newNotes[key] || '';
+    const current = allNotes[key] || '';
+    if (incoming === current) return;
+    const ref = rowRefs[ri];
+    if (!ref) { allNotes[key] = incoming; return; }
+    if (ref.noteInput && document.activeElement === ref.noteInput) return; // don't clobber active typing
+    allNotes[key] = incoming;
+    if (ref.noteInput){
+      ref.noteInput.value = incoming;
+    } else if (ref.notesTd){
+      ref.notesTd.textContent = incoming;
+      ref.notesTd.classList.toggle('has-note', !!incoming);
+    }
+  });
+}
+
+async function pollForUpdates(){
+  if (document.hidden) return;
+  const data = await loadTicksOnly();
+  if (data && data.ticks) applyRemoteState(data.ticks);
+  if (data && data.notes) applyRemoteNotes(data.notes);
+}
+
+async function refreshAfterEdit(){
+  const data = await loadTicksOnly();
+  if (data && data.ticks) applyRemoteState(data.ticks);
+  if (data && data.notes) applyRemoteNotes(data.notes);
+}
+
+function startPolling(){
+  // No more timer-based polling — refresh happens right after a check
+  // or quantity change instead (see refreshAfterEdit below), and when the
+  // tab regains focus. This avoids constant background requests.
+}
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) pollForUpdates();
+});
+
+resetBtn.addEventListener('click', async () => {
+  if (!confirm('This clears every check mark and quantity saved here (for everyone using this page). Continue?')) return;
+  const ok = await resetAllTicks();
+  if (ok){
+    allTicks = {};
+    allNotes = {};
+    wasAllDone = false;
+    renderTable();
+  }
+});
+
+const testReportBtn = document.getElementById('testReportBtn');
+if (testReportBtn){
+  testReportBtn.addEventListener('click', async () => {
+    testReportBtn.disabled = true;
+    testReportBtn.textContent = 'Sending…';
+    try{
+      const res = await fetch('/api/send-report', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ force: true })
+      });
+      let data = null;
+      try{ data = await res.json(); }catch(e){}
+      if (res.ok && data && data.sent){
+        alert('Test email sent! Check the inbox (and spam folder) for jarme@boconcept.com.');
+      } else {
+        alert('Could not send: ' + (data && data.error ? data.error : ('HTTP ' + res.status)));
+      }
+    }catch(e){
+      alert('Could not reach the server.');
+    }finally{
+      testReportBtn.disabled = false;
+      testReportBtn.textContent = 'Send test report now';
+    }
+  });
+}
+
+// =====================================================
+// BARCODE SCANNER
+// Scanning a code adds +1 to the row that has that code in any column
+// (except the quantity column). When the same code is on more than one
+// row (e.g. different orders), the checker picks which order it is for.
+// =====================================================
+const scanBtn = document.getElementById('scanBtn');
+const scannerPanel = document.getElementById('scannerPanel');
+const scanStatus = document.getElementById('scanStatus');
+const scanToast = document.getElementById('scanToast');
+let scanner = null, scannerRunning = false, scanLocked = false, audioContext = null;
+
+function normalizeScanCode(value){
+  return String(value ?? '').trim().toUpperCase();
+}
+
+// Excel drops leading zeros from numeric barcodes, so digit-only codes are matched without them
+function scanMatchKey(value){
+  const s = normalizeScanCode(value);
+  return /^\d+$/.test(s) ? (s.replace(/^0+/, '') || '0') : s;
+}
+
+function findOrderColIndex(){
+  return headers.findIndex(h => /order|ordem|pedido|^\s*po\b|^\s*so\b/i.test(String(h ?? '')));
+}
+
+function findRowsByCode(code){
+  const key = scanMatchKey(code);
+  const found = [];
+  rows.forEach((row, ri) => {
+    const hit = row.some((cell, ci) =>
+      ci !== qtyColIndex && String(cell ?? '').trim() !== '' && scanMatchKey(cell) === key
+    );
+    if (hit) found.push(ri);
+  });
+  return found;
+}
+
+function rowDoneQty(ri){
+  const state = allTicks[rowKeys[ri]];
+  return state ? (state.qty || 0) : 0;
+}
+
+function rowLabel(ri){
+  const orderCol = findOrderColIndex();
+  return orderCol >= 0 && String(rows[ri][orderCol] ?? '').trim()
+    ? String(rows[ri][orderCol]).trim()
+    : 'Row ' + (ri + 1);
+}
+
+function rowDetail(ri){
+  const orderCol = findOrderColIndex();
+  return rows[ri]
+    .filter((c, ci) => ci !== orderCol && ci !== qtyColIndex && ci !== tickColIndex && String(c ?? '').trim() !== '')
+    .map(c => String(c).trim())
+    .join(' · ')
+    .slice(0, 90);
+}
+
+function showScanToast(message, type = ''){
+  scanToast.textContent = message;
+  scanToast.className = 'scan-toast show' + (type ? ' ' + type : '');
+  clearTimeout(showScanToast.timer);
+  showScanToast.timer = setTimeout(() => scanToast.classList.remove('show'), 2600);
+}
+
+function getAudioContext(){
+  const C = window.AudioContext || window.webkitAudioContext;
+  if (!C) return null;
+  if (!audioContext) audioContext = new C();
+  return audioContext;
+}
+
+async function unlockAudio(){
+  const c = getAudioContext();
+  if (c && c.state === 'suspended'){ try{ await c.resume(); }catch(e){} }
+}
+
+function playTone(delay = 0, freq = 1500, dur = .09){
+  const c = getAudioContext();
+  if (!c) return;
+  const t = c.currentTime + delay, o = c.createOscillator(), g = c.createGain();
+  o.type = 'square';
+  o.frequency.setValueAtTime(freq, t);
+  g.gain.setValueAtTime(.65, t);
+  g.gain.exponentialRampToValueAtTime(.001, t + dur);
+  o.connect(g); g.connect(c.destination);
+  o.start(t); o.stop(t + dur);
+}
+
+function beepOk(){ playTone(0, 1450, .095); }
+function beepDone(){ playTone(0, 1450, .08); playTone(.1, 1900, .12); }
+function beepError(){ playTone(0, 320, .18); playTone(.22, 320, .18); }
+function vibrate(pattern){ if ('vibrate' in navigator) navigator.vibrate(pattern); }
+
+function chooseOrderRow(code, matches){
+  return new Promise(resolve => {
+    const overlay = document.getElementById('orderPickOverlay');
+    const list = document.getElementById('orderPickList');
+    const cancel = document.getElementById('orderPickCancel');
+
+    document.getElementById('orderPickText').textContent =
+      code + ' is on more than one order. Which order is it for?';
+    list.innerHTML = '';
+
+    const finish = ri => {
+      overlay.classList.remove('open');
+      cancel.onclick = null;
+      resolve(ri);
+    };
+
+    matches.forEach(ri => {
+      const expected = parseExpectedQty(rows[ri]);
+      const done = rowDoneQty(ri);
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'order-option' + (done >= expected ? ' done' : '');
+
+      const text = document.createElement('span');
+      const name = document.createElement('strong');
+      name.textContent = rowLabel(ri);
+      const detail = document.createElement('small');
+      detail.textContent = rowDetail(ri);
+      text.appendChild(name);
+      text.appendChild(detail);
+
+      const prog = document.createElement('span');
+      prog.className = 'prog';
+      prog.textContent = done + ' / ' + expected + (done >= expected ? ' ✓' : '');
+
+      btn.appendChild(text);
+      btn.appendChild(prog);
+      btn.onclick = () => finish(ri);
+      list.appendChild(btn);
+    });
+
+    cancel.onclick = () => finish(null);
     overlay.classList.add('open');
   });
 }
 
-async function handleCode(raw,{fromCamera=false}={}){
-  const code=normalizeCode(raw);
-  if(!code)return;
-  if(!state.lines.length){beepError();showToast('Load the list first','error');return}
-  const key=matchKey(code);
-  const matches=state.lines.filter(l=>matchKey(l.barcode)===key);
+function flashRow(ri){
+  const ref = rowRefs[ri];
+  if (!ref) return;
+  ref.tr.classList.add('scan-flash');
+  if (!ref.tr.classList.contains('hidden-row')) ref.tr.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  setTimeout(() => ref.tr.classList.remove('scan-flash'), 2500);
+}
 
-  if(!matches.length){
-    let e=state.extras.find(x=>x.barcode===code);
-    if(e)e.quantity++;else{e={barcode:code,quantity:1};state.extras.push(e)}
-    e.lastScanned=nowText();
-    state.log.push({type:'extra',barcode:code});
-    beepError();vibrate([120,80,120]);
-    showToast(code+' is NOT on the list','error');
-    if(fromCamera)scanStatus.textContent='Not on list: '+code;
-    persist();render();return;
+async function handleScannedCode(raw){
+  const code = normalizeScanCode(raw);
+  if (!code) return;
+
+  if (!rows.length){
+    beepError();
+    showScanToast('No list loaded yet', 'error');
+    return;
   }
 
-  let line=matches[0];
-  if(matches.length>1){
-    line=await chooseOrder(code,matches);
-    if(!line){showToast('Not counted');return}
-  }
-  line.scanned++;
-  line.lastScanned=nowText();
-  state.log.push({type:'line',id:line.id});
-  const st=lineStatus(line);
-  const label=(line.order?'Order '+line.order+' · ':'')+code+' → '+line.scanned+'/'+line.expected;
-  if(st==='over'){beepError();vibrate([120,80,120]);showToast(label+' — MORE than expected','warn')}
-  else if(st==='ok'){beepDone();vibrate(70);showToast(label+' ✓ complete')}
-  else{beepOk();vibrate(70);showToast(label)}
-  if(fromCamera)scanStatus.textContent='Scanned: '+code;
-  flashId=line.id;
-  persist();render();
-}
+  const matches = findRowsByCode(code);
 
-function undoLast(){
-  const last=state.log.pop();
-  if(!last){showToast('Nothing to undo');return}
-  if(last.type==='line'){
-    const l=state.lines.find(x=>x.id===last.id);
-    if(l&&l.scanned>0){l.scanned--;flashId=l.id;showToast('Undone: '+(l.order?'order '+l.order+' · ':'')+l.barcode+' → '+l.scanned+'/'+l.expected)}
-  }else{
-    const i=state.extras.findIndex(x=>x.barcode===last.barcode);
-    if(i>=0){state.extras[i].quantity--;if(state.extras[i].quantity<=0)state.extras.splice(i,1);showToast('Undone: '+last.barcode)}
-  }
-  persist();render();
-}
-
-function changeLine(id,d){
-  const l=state.lines.find(x=>x.id===id);if(!l)return;
-  l.scanned=Math.max(0,l.scanned+d);l.lastScanned=nowText();
-  // keep undo history consistent with manual adjustments
-  if(d<0){const i=state.log.map(x=>x.type==='line'&&x.id===id).lastIndexOf(true);if(i>=0)state.log.splice(i,1)}
-  else state.log.push({type:'line',id});
-  persist();render();
-}
-function removeExtra(code){state.extras=state.extras.filter(x=>x.barcode!==code);state.log=state.log.filter(x=>!(x.type==='extra'&&x.barcode===code));persist();render()}
-
-// ---------- Rendering ----------
-function td(label,content,cls){const c=document.createElement('td');c.dataset.label=label;if(cls)c.className=cls;if(content instanceof Node)c.appendChild(content);else c.textContent=content;return c}
-function render(){
-  const lines=state.lines;
-  const counts={pending:0,partial:0,ok:0,over:0};
-  let exp=0,scn=0;
-  lines.forEach(l=>{counts[lineStatus(l)]++;exp+=l.expected;scn+=Math.min(l.scanned,l.expected)});
-  const extrasQty=state.extras.reduce((s,x)=>s+x.quantity,0);
-
-  $('listInfo').innerHTML='';
-  const info=document.createElement('div');
-  if(state.listName){info.append('List: ');const s=document.createElement('strong');s.textContent=state.listName;info.append(s,' · '+lines.length+' lines · loaded '+state.loadedAt)}
-  else info.textContent='No list loaded yet.';
-  $('listInfo').appendChild(info);
-
-  const stats=$('stats');stats.innerHTML='';
-  const stat=(label,val,bad)=>{const d=document.createElement('div');d.className='stat'+(bad?' bad':'');const s=document.createElement('strong');s.textContent=val;d.append(label+': ',s);stats.appendChild(d)};
-  if(lines.length){
-    stat('Lines OK',counts.ok+' / '+lines.length);
-    stat('Units',scn+' / '+exp);
-    stat('Pending lines',counts.pending+counts.partial,counts.pending+counts.partial>0);
-    stat('Over',counts.over,counts.over>0);
-    stat('Not on list',extrasQty,extrasQty>0);
+  if (!matches.length){
+    beepError();
+    vibrate([120, 80, 120]);
+    showScanToast(code + ' is NOT on the list', 'error');
+    scanStatus.textContent = 'Not on list: ' + code;
+    return;
   }
 
-  document.querySelectorAll('#filters button').forEach(b=>b.classList.toggle('active',b.dataset.filter===filter));
-  tableBody.innerHTML='';
-  const visible=lines.filter(l=>{const s=lineStatus(l);return filter==='all'||(filter==='pending'?(s==='pending'||s==='partial'):s===filter)});
-  visible.forEach(l=>{
-    const st=lineStatus(l),tr=document.createElement('tr');
-    tr.className='st-'+st;tr.dataset.id=l.id;
-    const qty=document.createElement('div');qty.className='qty-wrap';
-    const minus=document.createElement('button');minus.className='qty-btn';minus.textContent='−';minus.onclick=()=>changeLine(l.id,-1);
-    const val=document.createElement('span');val.className='qty';val.textContent=l.scanned+' / '+l.expected;
-    const plus=document.createElement('button');plus.className='qty-btn';plus.textContent='+';plus.onclick=()=>changeLine(l.id,1);
-    qty.append(minus,val,plus);
-    const badge=document.createElement('span');badge.className='badge '+st;badge.textContent=STATUS_LABEL[st];
-    tr.append(td('Order',l.order||'—','code'),td('Barcode',l.barcode,'code'),td('Description',l.description||''),td('Scanned / Expected',qty),td('Status',badge));
-    if(l.id===flashId)tr.classList.add('flash');
-    tableBody.appendChild(tr);
-  });
-  emptyState.style.display=visible.length?'none':'block';
-  emptyState.textContent=lines.length?'No lines in this filter.':'No list loaded. Tap “Load list” to import the Excel/CSV file.';
-
-  extrasBody.innerHTML='';
-  state.extras.forEach(x=>{
-    const tr=document.createElement('tr');tr.className='st-over';
-    const del=document.createElement('button');del.className='delete-btn';del.textContent='Delete';del.onclick=()=>removeExtra(x.barcode);
-    tr.append(td('Barcode',x.barcode,'code'),td('Quantity',String(x.quantity)),td('Last scanned',x.lastScanned||''),td('Action',del));
-    extrasBody.appendChild(tr);
-  });
-  extrasSection.style.display=state.extras.length?'block':'none';
-
-  if(flashId){const r=tableBody.querySelector('tr.flash');if(r)r.scrollIntoView({block:'nearest',behavior:'smooth'});flashId=null}
-  sendBtn.disabled=!lines.length;
-  clearBtn.disabled=!lines.length&&!state.extras.length;
-  undoBtn.disabled=!state.log.length;
-  scanBtn.disabled=scannerRunning||!lines.length;
-}
-
-// ---------- List import ----------
-const FIELD_KEYWORDS={
-  barcode:['barcode','bar code','barcodes','ean','ean13','ean 13','upc','gtin','codigo de barras','cod barras','código de barras','code','codigo','código','sku','item code','item no','item number','article','artigo'],
-  order:['order','order no','order number','order nr','ordem','pedido','po','po number','sales order','so','ordem de venda','nº pedido','n pedido'],
-  qty:['qty','quantity','quantidade','qtd','qtde','quant','pcs','units','qty ordered','quantity ordered'],
-  desc:['description','descrição','descricao','desc','name','nome','product','produto','item name','item description']
-};
-function norm(s){return String(s??'').trim().toLowerCase().replace(/[._:#]/g,' ').replace(/\s+/g,' ')}
-function cellText(v){if(typeof v==='number'&&Number.isInteger(v))return String(v);return String(v??'').trim()}
-function colLetter(i){let s='';i++;while(i>0){const m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=Math.floor((i-1)/26)}return s}
-function keywordHits(row){return row.reduce((n,c)=>{const t=norm(c);return n+(Object.values(FIELD_KEYWORDS).some(k=>k.includes(t))&&t?1:0)},0)}
-function findHeaderRow(rows){
-  let best=-1,bestHits=0;
-  for(let i=0;i<Math.min(rows.length,15);i++){const h=keywordHits(rows[i]);if(h>bestHits){best=i;bestHits=h}}
-  if(best>=0)return best;
-  return Math.max(0,rows.findIndex(r=>r.some(c=>cellText(c)!=='')));
-}
-function guessColumns(header){
-  const used=new Set(),out={};
-  for(const field of ['barcode','order','qty','desc']){
-    const kw=FIELD_KEYWORDS[field];
-    let idx=header.findIndex((h,i)=>!used.has(i)&&kw.includes(norm(h)));
-    if(idx<0)idx=header.findIndex((h,i)=>!used.has(i)&&norm(h)&&kw.some(k=>k.length>3&&norm(h).includes(k)));
-    out[field]=idx;if(idx>=0)used.add(idx);
+  let ri = matches[0];
+  if (matches.length > 1){
+    ri = await chooseOrderRow(code, matches);
+    if (ri === null){
+      showScanToast('Not counted');
+      return;
+    }
   }
-  return out;
-}
 
-let pendingImport=null;
-function sheetRows(wb,name){return XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,raw:true,defval:''})}
-function fillMapping(){
-  const {wb,sheet}=pendingImport;
-  const rows=sheetRows(wb,sheet);
-  const headerRow=findHeaderRow(rows);
-  const header=rows[headerRow]||[];
-  const width=rows.reduce((m,r)=>Math.max(m,r.length),0);
-  pendingImport.rows=rows;pendingImport.headerRow=headerRow;
-  const guess=guessColumns(header);
-  const opts=(sel,optional)=>{
-    sel.innerHTML='';
-    if(optional){const o=document.createElement('option');o.value=NONE;o.textContent='— none —';sel.appendChild(o)}
-    for(let i=0;i<width;i++){const o=document.createElement('option');o.value=String(i);o.textContent=colLetter(i)+' – '+(cellText(header[i])||'(empty)');sel.appendChild(o)}
-  };
-  opts($('mapBarcode'),false);opts($('mapOrder'),true);opts($('mapQty'),true);opts($('mapDesc'),true);
-  $('mapBarcode').value=String(Math.max(0,guess.barcode));
-  $('mapOrder').value=String(guess.order);
-  $('mapQty').value=String(guess.qty);
-  $('mapDesc').value=String(guess.desc);
-  $('mappingError').textContent='';
-}
-async function onFileChosen(file){
-  try{
-    const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});
-    pendingImport={file:file.name,wb,sheet:wb.SheetNames[0]};
-    $('mappingFile').textContent=file.name+' — check that the columns below are correct.';
-    const ss=$('mapSheet');ss.innerHTML='';
-    wb.SheetNames.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;ss.appendChild(o)});
-    ss.value=pendingImport.sheet;
-    $('sheetWrap').style.display=wb.SheetNames.length>1?'block':'none';
-    fillMapping();
-    $('mappingOverlay').classList.add('open');
-  }catch(e){console.error(e);alert('Could not read this file. Use .xlsx, .xls or .csv.')}
-}
-function importList(){
-  const {rows,headerRow}=pendingImport;
-  const bc=+$('mapBarcode').value,oc=+$('mapOrder').value,qc=+$('mapQty').value,dc=+$('mapDesc').value;
-  const map=new Map();
-  let skipped=0;
-  for(let r=headerRow+1;r<rows.length;r++){
-    const row=rows[r];
-    const barcode=normalizeCode(cellText(row[bc]));
-    if(!barcode){if(row.some(c=>cellText(c)!==''))skipped++;continue}
-    const order=oc>=0?cellText(row[oc]):'';
-    let qty=1;
-    if(qc>=0){const q=Number(String(cellText(row[qc])).replace(',','.'));if(Number.isFinite(q)&&q>0)qty=Math.round(q);else if(cellText(row[qc])!==''&&q===0)continue}
-    const description=dc>=0?cellText(row[dc]):'';
-    const key=order+'\u0000'+matchKey(barcode);
-    const ex=map.get(key);
-    if(ex){ex.expected+=qty;if(!ex.description)ex.description=description}
-    else map.set(key,{id:'L'+map.size,order,barcode,description,expected:qty,scanned:0,lastScanned:''});
+  const expected = parseExpectedQty(rows[ri]);
+  const label = rowLabel(ri) + ' · ' + code;
+
+  if (rowDoneQty(ri) >= expected){
+    beepError();
+    vibrate([120, 80, 120]);
+    showScanToast(label + ' is already complete (' + expected + '/' + expected + ')', 'warn');
+    flashRow(ri);
+    return;
   }
-  const lines=[...map.values()];
-  if(!lines.length){$('mappingError').textContent='No barcodes found in this column.';return}
-  state={listName:pendingImport.file,loadedAt:nowText(),lines,extras:[],log:[]};
-  filter='all';
-  persist();render();
-  $('mappingOverlay').classList.remove('open');
-  pendingImport=null;
-  const multi=new Set();const seen=new Map();
-  lines.forEach(l=>{const k=matchKey(l.barcode);if(seen.has(k)&&seen.get(k)!==l.order)multi.add(k);seen.set(k,l.order)});
-  showToast(lines.length+' lines imported'+(multi.size?' · '+multi.size+' barcodes in more than one order':'')+(skipped?' · '+skipped+' rows without barcode':''));
+
+  const result = await saveTickDelta(rowKeys[ri], 1, expected);
+  if (!result || typeof result.qty !== 'number'){
+    beepError();
+    showScanToast('Could not save — check the connection and scan again', 'error');
+    return;
+  }
+
+  if (result.ticks) applyRemoteState(result.ticks);
+
+  if (result.qty >= expected){
+    beepDone();
+    vibrate(70);
+    showScanToast(label + ' → ' + result.qty + '/' + expected + ' ✓ complete');
+  } else {
+    beepOk();
+    vibrate(70);
+    showScanToast(label + ' → ' + result.qty + '/' + expected);
+  }
+  scanStatus.textContent = 'Scanned: ' + code;
+  flashRow(ri);
+
+  if (result.allComplete){
+    await maybeSendReport();
+  }
 }
 
-// ---------- Report ----------
-function makeWorkbook(checkedBy){
-  const sent=new Date().toLocaleString();
-  const check=state.lines.map(l=>({ORDER:l.order,BARCODE:l.barcode,DESCRIPTION:l.description,EXPECTED:l.expected,SCANNED:l.scanned,DIFFERENCE:l.scanned-l.expected,STATUS:STATUS_LABEL[lineStatus(l)],'LAST SCANNED':l.lastScanned||'','CHECKED BY':checkedBy}));
-  const ws=XLSX.utils.json_to_sheet(check,{header:['ORDER','BARCODE','DESCRIPTION','EXPECTED','SCANNED','DIFFERENCE','STATUS','LAST SCANNED','CHECKED BY']});
-  ws['!cols']=[{wch:16},{wch:22},{wch:36},{wch:10},{wch:10},{wch:12},{wch:10},{wch:20},{wch:16}];
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Check');
-  const ex=XLSX.utils.json_to_sheet(state.extras.map(x=>({BARCODE:x.barcode,QUANTITY:x.quantity,'LAST SCANNED':x.lastScanned||''})),{header:['BARCODE','QUANTITY','LAST SCANNED']});
-  ex['!cols']=[{wch:22},{wch:10},{wch:20}];
-  XLSX.utils.book_append_sheet(wb,ex,'Not on list');
-  const s=summary();
-  const info=XLSX.utils.aoa_to_sheet([['Checked by',checkedBy],['List file',state.listName],['List loaded',state.loadedAt],['Report created',sent],['Lines OK',s.ok+' / '+s.lines],['Lines pending/partial',s.pending],['Lines over',s.over],['Units scanned / expected',s.units+' / '+s.expected],['Units not on list',s.extras]]);
-  info['!cols']=[{wch:26},{wch:40}];
-  XLSX.utils.book_append_sheet(wb,info,'Summary');
-  return wb;
-}
-function summary(){
-  const c={pending:0,partial:0,ok:0,over:0};let units=0,expected=0;
-  state.lines.forEach(l=>{c[lineStatus(l)]++;units+=Math.min(l.scanned,l.expected);expected+=l.expected});
-  return{lines:state.lines.length,ok:c.ok,pending:c.pending+c.partial,over:c.over,units,expected,extras:state.extras.reduce((s,x)=>s+x.quantity,0)};
-}
-function summaryText(s){return'List: '+state.listName+'\nLines OK: '+s.ok+' / '+s.lines+'\nLines pending/partial: '+s.pending+'\nLines over: '+s.over+'\nUnits scanned: '+s.units+' / '+s.expected+'\nUnits not on list: '+s.extras}
-function reportFilename(){const d=new Date(),p=n=>String(n).padStart(2,'0');return`DUX-Scan_${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}_${p(d.getHours())}-${p(d.getMinutes())}.xlsx`}
-async function sendByEmail(){
-  if(!state.lines.length)return;
-  const checkedBy=currentCheckerName()||await requestCheckerName();
-  if(!checkedBy){alert('Please enter the checker name before sending the report.');return}
-  const s=summary();
-  const issues=s.pending+s.over+(s.extras?1:0);
-  if(issues&&!confirm('The check is not complete:\n\n'+summaryText(s)+'\n\nSend the report anyway?'))return;
-
-  sendBtn.disabled=true;sendBtn.textContent='Sending…';
-  try{
-    const bytes=new Uint8Array(XLSX.write(makeWorkbook(checkedBy),{bookType:'xlsx',type:'array'}));
-    let binary='';
-    for(let i=0;i<bytes.length;i++)binary+=String.fromCharCode(bytes[i]);
-    const res=await fetch('/api/send-report',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({filename:reportFilename(),content:btoa(binary),checkedBy,summary:summaryText(s),complete:!issues})});
-    let data=null;try{data=await res.json()}catch(e){}
-    if(res.ok&&data&&data.sent){showToast('Report sent successfully!');alert('DUX Scan report sent successfully. Checked by: '+checkedBy)}
-    else alert('Could not send report: '+(data&&data.error?data.error:'HTTP '+res.status));
-  }catch(e){console.error(e);alert('Could not reach the server.')}
-  finally{sendBtn.textContent='Send by email';render()}
-}
-
-// ---------- Camera ----------
 async function startScanner(){
-  if(scannerRunning||!state.lines.length)return;
-  scanLocked=false;await unlockAudio();scannerPanel.classList.add('open');scanStatus.textContent='Starting camera…';
+  if (scannerRunning) return;
+  scanLocked = false;
+  await unlockAudio();
+  scannerPanel.classList.add('open');
+  scanStatus.textContent = 'Starting camera…';
   try{
-    scanner=new Html5Qrcode('reader');
-    await scanner.start({facingMode:'environment'},{fps:15,qrbox:(w,h)=>({width:Math.floor(w*.92),height:Math.floor(Math.min(h*.60,130))}),aspectRatio:2.4,disableFlip:false},onScanSuccess,()=>{});
-    scannerRunning=true;scanBtn.disabled=true;scanStatus.textContent='Point the camera at one barcode.';
-  }catch(e){console.error(e);scannerRunning=false;scanLocked=false;scanBtn.disabled=false;scanStatus.textContent='Camera could not start. Check browser camera permission.'}
+    scanner = new Html5Qrcode('reader');
+    await scanner.start(
+      { facingMode: 'environment' },
+      {
+        fps: 15,
+        qrbox: (w, h) => ({ width: Math.floor(w * .92), height: Math.floor(Math.min(h * .60, 130)) }),
+        aspectRatio: 2.4,
+        disableFlip: false
+      },
+      onScanSuccess,
+      () => {}
+    );
+    scannerRunning = true;
+    scanBtn.disabled = true;
+    scanStatus.textContent = 'Point the camera at one barcode.';
+  }catch(e){
+    console.error(e);
+    scannerRunning = false;
+    scanBtn.disabled = false;
+    scanStatus.textContent = 'Camera could not start. Check browser camera permission.';
+  }
 }
+
 async function onScanSuccess(decoded){
-  if(scanLocked)return;
-  const code=normalizeCode(decoded);if(!code)return;
-  scanLocked=true;
-  await new Promise(r=>setTimeout(r,120));
+  if (scanLocked) return;
+  const code = normalizeScanCode(decoded);
+  if (!code) return;
+  scanLocked = true;
+  await new Promise(r => setTimeout(r, 120));
   await stopScanner();
-  await handleCode(code,{fromCamera:true});
+  await handleScannedCode(code);
 }
+
 async function stopScanner(){
-  const cur=scanner;scannerRunning=false;scanner=null;
-  try{if(cur){await cur.stop();cur.clear()}}catch{}
-  scannerPanel.classList.remove('open');$('reader').innerHTML='';render();
+  const current = scanner;
+  scannerRunning = false;
+  scanner = null;
+  try{
+    if (current){ await current.stop(); current.clear(); }
+  }catch(e){}
+  scanBtn.disabled = false;
+  scannerPanel.classList.remove('open');
+  document.getElementById('reader').innerHTML = '';
 }
 
-// ---------- Events ----------
-scanBtn.onclick=startScanner;closeScannerBtn.onclick=stopScanner;sendBtn.onclick=sendByEmail;undoBtn.onclick=undoLast;
-loadBtn.onclick=()=>{
-  if(state.lines.some(l=>l.scanned>0)||state.extras.length){if(!confirm('Loading a new list will discard the current check progress. Continue?'))return}
-  fileInput.value='';fileInput.click();
-};
-fileInput.onchange=()=>{if(fileInput.files[0])onFileChosen(fileInput.files[0])};
-$('mapSheet').onchange=()=>{pendingImport.sheet=$('mapSheet').value;fillMapping()};
-$('mappingCancel').onclick=()=>{$('mappingOverlay').classList.remove('open');pendingImport=null};
-$('mappingOk').onclick=importList;
-$('filters').onclick=e=>{const b=e.target.closest('button[data-filter]');if(b){filter=b.dataset.filter;render()}};
-manualCode.oninput=()=>manualCode.value=manualCode.value.toUpperCase();
-addManualBtn.onclick=async()=>{const v=manualCode.value;manualCode.value='';await unlockAudio();await handleCode(v);manualCode.focus()};
-manualCode.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();addManualBtn.click()}};
-clearBtn.onclick=()=>{if(confirm('Clear the loaded list and all check progress?')){state=emptyState_();persist();render();showToast('Cleared')}};
-window.addEventListener('pagehide',()=>{if(scannerRunning)stopScanner()});
-$('changeCheckerBtn').onclick=()=>requestCheckerName(true);
+scanBtn.addEventListener('click', startScanner);
+document.getElementById('closeScannerBtn').addEventListener('click', stopScanner);
+window.addEventListener('pagehide', () => { if (scannerRunning) stopScanner(); });
 
-render();
-requestCheckerName();
+async function init(){
+  const state = await loadState();
+  if (state && state.headers && state.rows){
+    headers = state.headers;
+    rows = state.rows;
+    allTicks = state.ticks || {};
+    allNotes = state.notes || {};
+    uploadArea.style.display = 'none';
+    emptyState.style.display = 'none';
+    afterUpload.style.display = 'block';
+    if (isAdmin){
+      fileNameEl.textContent = '(current sheet)';
+      rowCountEl.textContent = rows.length;
+      setupColumnSelects(state.tickColIndex, state.qtyColIndex);
+    } else {
+      tickColIndex = state.tickColIndex;
+      qtyColIndex = state.qtyColIndex;
+    }
+    buildKeys();
+    renderTable();
+    startPolling();
+  } else if (isAdmin){
+    uploadArea.style.display = 'block';
+  } else {
+    emptyState.style.display = 'block';
+  }
+}
+// =====================================================
+// APP START
+// Always identify the checker before loading shared data.
+// =====================================================
+bindCheckerChangeButton();
+requestCheckerName(true).then(() => init());
 </script>
+
 </body>
 </html>
